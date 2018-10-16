@@ -2,68 +2,71 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 
 	_ "github.com/blocklayerhq/chainkit/templates/build" // embed the static assets
-	"github.com/pkg/errors"
 	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cobra"
 )
 
 var initCmd = &cobra.Command{
-	Use:   "init [--template=...] <name>",
+	Use:   "init <name>",
 	Short: "Initialize an application",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
-
-		template, err := cmd.Flags().GetString("template")
-		if err != nil {
-			return err
-		}
 
 		dest, err := cmd.Flags().GetString("dest")
 		if err != nil {
 			return err
 		}
 
-		return initialize(name, template, dest)
+		return initialize(name, dest)
 	},
 }
 
-func initialize(name, template, dest string) error {
+func initialize(name, dest string) error {
 	templates, err := fs.New()
 	if err != nil {
 		return err
 	}
 
-	templateRoot := path.Join("/", template)
-	if _, err := templates.Open(templateRoot); err != nil {
-		return errors.Wrap(err, "unable to locate template")
-	}
-
-	if err := extractFiles(templates, templateRoot, dest); err != nil {
+	if err := extractFiles(templates, dest); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func extractFiles(templates http.FileSystem, root, dest string) error {
-	err := fs.Walk(templates, root, func(path string, fi os.FileInfo, err error) error {
+func extractFiles(templates http.FileSystem, dest string) error {
+	err := fs.Walk(templates, "/", func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(path)
-		return nil
+		return extractFile(templates, path, dest, fi)
 	})
 	return err
 }
 
+func extractFile(templates http.FileSystem, src, dst string, fi os.FileInfo) error {
+	dstPath := path.Join(dst, src)
+	fmt.Println(dstPath)
+
+	if fi.IsDir() {
+		return os.MkdirAll(dstPath, fi.Mode())
+	}
+
+	data, err := fs.ReadFile(templates, src)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(dstPath, data, fi.Mode())
+}
+
 func init() {
-	initCmd.Flags().StringP("template", "t", "cosmos-basecoin", "template to use for initialization")
 	initCmd.Flags().StringP("dest", "d", ".", "destination path of the generated application")
 
 	rootCmd.AddCommand(initCmd)
