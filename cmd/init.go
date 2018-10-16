@@ -15,7 +15,8 @@ import (
 )
 
 type templateContext struct {
-	Name string
+	Name    string
+	WorkDir string
 }
 
 var initCmd = &cobra.Command{
@@ -34,14 +35,23 @@ var initCmd = &cobra.Command{
 	},
 }
 
+func init() {
+	initCmd.Flags().StringP("dest", "d", ".", "destination path of the generated application")
+
+	rootCmd.AddCommand(initCmd)
+}
+
 func initialize(name, dest string) error {
+	workDir := path.Join(dest, name)
+
 	// Make sure the destination path doesn't exist.
-	if _, err := os.Stat(dest); !os.IsNotExist(err) {
-		return fmt.Errorf("destination path %q already exists", dest)
+	if _, err := os.Stat(workDir); !os.IsNotExist(err) {
+		return fmt.Errorf("destination path %q already exists", workDir)
 	}
 
 	ctx := &templateContext{
-		Name: name,
+		Name:    name,
+		WorkDir: workDir,
 	}
 
 	templates, err := fs.New()
@@ -49,7 +59,7 @@ func initialize(name, dest string) error {
 		return err
 	}
 
-	if err := extractFiles(ctx, templates, dest); err != nil {
+	if err := extractFiles(ctx, templates, workDir); err != nil {
 		return err
 	}
 
@@ -101,10 +111,4 @@ func templatize(ctx *templateContext, input string) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
-}
-
-func init() {
-	initCmd.Flags().StringP("dest", "d", ".", "destination path of the generated application")
-
-	rootCmd.AddCommand(initCmd)
 }
