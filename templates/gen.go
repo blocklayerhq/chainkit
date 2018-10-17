@@ -1,3 +1,8 @@
 package templates
 
-//go:generate statik -src ./src -p build
+import (
+	// Make vendoring happy.
+	_ "github.com/shurcooL/vfsgen"
+)
+
+//go:generate go run -tags=dev assets_generate.go

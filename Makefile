@@ -19,4 +19,5 @@ generate:
 lint:
 	gometalinter \
 		--vendor --tests --disable-all \
+		--exclude templates/src/ \
 		-E gofmt -E vet -E goimports -E golint ./...

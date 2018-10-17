@@ -24,18 +24,13 @@
 #   go-tests = true
 #   unused-packages = true
 
-
-[[constraint]]
-  name = "github.com/spf13/cobra"
-  version = "0.0.3"
-
 [prune]
   go-tests = true
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/rakyll/statik"
-  version = "0.1.5"
+  name = "github.com/spf13/cobra"
+  version = "0.0.3"
 
 [[constraint]]
   name = "github.com/pkg/errors"

@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"text/template"
 
-	_ "github.com/blocklayerhq/chainkit/templates/build" // embed the static assets
-	"github.com/rakyll/statik/fs"
+	"github.com/blocklayerhq/chainkit/pkg/httpfs"
+	"github.com/blocklayerhq/chainkit/templates"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -54,29 +54,25 @@ func initialize(name, dest string) error {
 		WorkDir: workDir,
 	}
 
-	templates, err := fs.New()
-	if err != nil {
-		return err
-	}
-
-	if err := extractFiles(ctx, templates, workDir); err != nil {
+	if err := extractFiles(ctx, workDir); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func extractFiles(ctx *templateContext, templates http.FileSystem, dest string) error {
-	err := fs.Walk(templates, "/", func(path string, fi os.FileInfo, err error) error {
+func extractFiles(ctx *templateContext, dest string) error {
+	err := httpfs.Walk(templates.Assets, "/", func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		return extractFile(ctx, templates, path, dest, fi)
+		fmt.Println(path)
+		return extractFile(ctx, path, dest, fi)
 	})
 	return err
 }
 
-func extractFile(ctx *templateContext, templates http.FileSystem, src, dst string, fi os.FileInfo) error {
+func extractFile(ctx *templateContext, src, dst string, fi os.FileInfo) error {
 	// Templatize the file name.
 	parsedSrc, err := templatize(ctx, src)
 	if err != nil {
@@ -84,21 +80,26 @@ func extractFile(ctx *templateContext, templates http.FileSystem, src, dst strin
 	}
 
 	dstPath := path.Join(dst, string(parsedSrc))
+	fmt.Println(src, dst, dstPath)
 
 	if fi.IsDir() {
 		return os.MkdirAll(dstPath, fi.Mode())
 	}
 
-	data, err := fs.ReadFile(templates, src)
+	data, err := httpfs.ReadFile(templates.Assets, src)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to read template file")
 	}
 	output, err := templatize(ctx, string(data))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to templetaize")
 	}
 
-	return ioutil.WriteFile(dstPath, output, fi.Mode())
+	if err := ioutil.WriteFile(dstPath, output, fi.Mode()); err != nil {
+		return errors.Wrap(err, "unable to write to destination")
+	}
+
+	return nil
 }
 
 func templatize(ctx *templateContext, input string) ([]byte, error) {
