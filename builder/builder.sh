@@ -17,7 +17,7 @@ init() {
         )
         echo "### Generating config and genesis in ./data"
         data_dir="$(pwd)/data"
-        echo docker run --rm \
+        docker run --rm \
             -v "${data_dir}/${APP_NAME}d:/root/.${APP_NAME}d" \
             -v "${data_dir}/${APP_NAME}cli:/root/.${APP_NAME}cli" \
             ${APP_NAME}:latest ${APP_NAME}d init

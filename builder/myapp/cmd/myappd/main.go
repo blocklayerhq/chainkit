@@ -6,6 +6,7 @@ import (
 	"os"
 
 	app "github.com/blocklayerhq/chainkit/builder/myapp"
+	gaiaInit "github.com/cosmos/cosmos-sdk/cmd/gaia/init"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -16,7 +17,7 @@ import (
 )
 
 // DefaultNodeHome fixme
-var DefaultNodeHome = os.ExpandEnv("$HOME/.MyAppd")
+var DefaultNodeHome = os.ExpandEnv("$HOME/.myappd")
 
 func main() {
 	cdc := app.MakeCodec()
@@ -29,6 +30,8 @@ func main() {
 	}
 
 	appInit := server.DefaultAppInit
+	rootCmd.AddCommand(gaiaInit.InitCmd(ctx, cdc, appInit))
+	rootCmd.AddCommand(gaiaInit.TestnetFilesCmd(ctx, cdc, appInit))
 
 	server.AddCommands(ctx, cdc, rootCmd, appInit,
 		newApp, exportAppStateAndTMValidators)
