@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/blocklayerhq/chainkit/pkg/httpfs"
@@ -17,6 +19,7 @@ import (
 type templateContext struct {
 	Name    string
 	WorkDir string
+	GoPkg   string
 }
 
 var initCmd = &cobra.Command{
@@ -26,23 +29,42 @@ var initCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 
-		dest, err := cmd.Flags().GetString("dest")
+		cwd, err := cmd.Flags().GetString("cwd")
+		if err != nil {
+			return err
+		}
+		if cwd == "" {
+			cwd, err = os.Getwd()
+			if err != nil {
+				return err
+			}
+		}
+
+		rootDir, err := filepath.Abs(cwd)
 		if err != nil {
 			return err
 		}
 
-		return initialize(name, dest)
+		if err := initialize(name, rootDir); err != nil {
+			return err
+		}
+		return nil
 	},
 }
 
 func init() {
-	initCmd.Flags().StringP("dest", "d", ".", "destination path of the generated application")
+	initCmd.Flags().String("cwd", ".", "specifies the current working directory")
 
 	rootCmd.AddCommand(initCmd)
 }
 
-func initialize(name, dest string) error {
-	workDir := path.Join(dest, name)
+func initialize(name, rootDir string) error {
+	gosource := goSrc()
+
+	if !strings.HasPrefix(rootDir, gosource) {
+		return fmt.Errorf("you must run this command within your GOPATH (%q)", goPath())
+	}
+	workDir := path.Join(rootDir, name)
 
 	// Make sure the destination path doesn't exist.
 	if _, err := os.Stat(workDir); !os.IsNotExist(err) {
@@ -52,6 +74,7 @@ func initialize(name, dest string) error {
 	ctx := &templateContext{
 		Name:    name,
 		WorkDir: workDir,
+		GoPkg:   strings.TrimPrefix(workDir, gosource+"/"),
 	}
 
 	if err := extractFiles(ctx, workDir); err != nil {
@@ -59,6 +82,18 @@ func initialize(name, dest string) error {
 	}
 
 	return nil
+}
+
+func goPath() string {
+	p := os.Getenv("GOPATH")
+	if p != "" {
+		return p
+	}
+	return path.Join(os.Getenv("HOME"), "go")
+}
+
+func goSrc() string {
+	return path.Join(goPath(), "src")
 }
 
 func extractFiles(ctx *templateContext, dest string) error {
