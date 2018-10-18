@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"os"
-	"os/exec"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -12,12 +11,12 @@ var buildCmd = &cobra.Command{
 	Short: "Build the application",
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cwd, err := cmd.Flags().GetString("cwd")
+		rootDir, err := getCwd(cmd)
 		if err != nil {
 			return err
 		}
 
-		return build(cwd)
+		return build(rootDir)
 	},
 }
 
@@ -27,16 +26,6 @@ func init() {
 	rootCmd.AddCommand(buildCmd)
 }
 
-func build(path string) error {
-	return run(path, "docker", "version")
-}
-
-func run(rootDir, command string, args ...string) error {
-	cmd := exec.Command(command)
-	cmd.Args = append([]string{command}, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Dir = rootDir
-	return cmd.Run()
+func build(rootDir string) error {
+	return docker(rootDir, "build", "-t", filepath.Base(rootDir), rootDir)
 }

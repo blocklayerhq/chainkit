@@ -10,7 +10,7 @@ build: generate
 
 .PHONY: generate
 generate:
-	go generate ./...
+	go generate ./templates
 
 # To install gometalinter on macOS:
 # brew tap alecthomas/homebrew-tap

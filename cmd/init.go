@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -29,18 +28,7 @@ var initCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 
-		cwd, err := cmd.Flags().GetString("cwd")
-		if err != nil {
-			return err
-		}
-		if cwd == "" {
-			cwd, err = os.Getwd()
-			if err != nil {
-				return err
-			}
-		}
-
-		rootDir, err := filepath.Abs(cwd)
+		rootDir, err := getCwd(cmd)
 		if err != nil {
 			return err
 		}
@@ -82,18 +70,6 @@ func initialize(name, rootDir string) error {
 	}
 
 	return nil
-}
-
-func goPath() string {
-	p := os.Getenv("GOPATH")
-	if p != "" {
-		return p
-	}
-	return path.Join(os.Getenv("HOME"), "go")
-}
-
-func goSrc() string {
-	return path.Join(goPath(), "src")
 }
 
 func extractFiles(ctx *templateContext, dest string) error {
