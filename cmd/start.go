@@ -26,7 +26,7 @@ func init() {
 
 func start(name, rootDir string) {
 	ui.Info("Starting %s", name)
-	ui.Success("Application is live at http://localhost:26657/")
+	ui.Success("Application is live at %s", ui.Emphasize("http://localhost:26657/"))
 	if err := dockerRun(rootDir, name, "start"); err != nil {
 		ui.Fatal("Failed to start the application: %v", err)
 	}
