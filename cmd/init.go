@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -130,6 +131,9 @@ func extractFile(ctx *templateContext, src, dst string, fi os.FileInfo) error {
 	}
 
 	dstPath := path.Join(dst, string(parsedSrc))
+	if filepath.Ext(dstPath) == ".tpl" {
+		dstPath = strings.TrimSuffix(dstPath, ".tpl")
+	}
 
 	if fi.IsDir() {
 		return os.MkdirAll(dstPath, fi.Mode())
