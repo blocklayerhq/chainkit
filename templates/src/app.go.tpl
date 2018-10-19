@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	appName = "MyApp"
+	appName = "{{ .Name }}"
 )
 
 // MyApp fixme
