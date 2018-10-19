@@ -12,21 +12,27 @@ var buildCmd = &cobra.Command{
 	Short: "Build the application",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		verbose, err := cmd.Flags().GetBool("verbose")
+		if err != nil {
+			ui.Fatal("unable to resolve flag: %v", err)
+		}
 		rootDir := getCwd(cmd)
 		name := filepath.Base(rootDir)
-		build(name, rootDir)
+		build(name, rootDir, verbose)
 	},
 }
 
 func init() {
 	buildCmd.Flags().String("cwd", ".", "specifies the current working directory")
+	buildCmd.Flags().BoolP("verbose", "v", false, "enable verbose mode")
 
 	rootCmd.AddCommand(buildCmd)
 }
 
-func build(name, rootDir string) {
+func build(name, rootDir string, verbose bool) {
 	ui.Info("Building %s", name)
-	if err := docker(rootDir, "build", "-q", "-t", name, rootDir); err != nil {
+	if err := dockerBuild(rootDir, name, verbose); err != nil {
 		ui.Fatal("Failed to build the application: %v", err)
 	}
+	ui.Success("Build successfull")
 }

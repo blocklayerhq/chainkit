@@ -43,3 +43,15 @@
 [[constraint]]
   name = "github.com/xlab/treeprint"
   revision = "d6fb6747feb6e7cfdc44682a024bddf87ef07ec2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/acarl005/stripansi"
+
+[[constraint]]
+  name = "github.com/schollz/progressbar"
+  version = "2.6.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/gosuri/uilive"

@@ -2,6 +2,22 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:66a87baf099221f7deecf7a3ee301e437d9d93ef3be0bc92645e71400c2e9d31"
+  name = "github.com/acarl005/stripansi"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5a71ef0e047df0427e87a79f27009029921f1f9b"
+
+[[projects]]
+  branch = "master"
+  digest = "1:cde3502ff38bf880c3a783acc5b48754aa509c651c4902c68726d2769883e9de"
+  name = "github.com/gosuri/uilive"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ac356e6e42cd31fcef8e6aec13ae9ed6fe87713e"
+
+[[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
@@ -10,12 +26,36 @@
   version = "v1.0"
 
 [[projects]]
+  digest = "1:0981502f9816113c9c8c4ac301583841855c8cf4da8c72f696b3ebedf6d0e4e5"
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c"
+  version = "v0.0.4"
+
+[[projects]]
+  branch = "master"
+  digest = "1:ded79ae4dc43f8382f782459c8082f8910e5002fc04a492e98c7a72734ae0dc5"
+  name = "github.com/mitchellh/colorstring"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "8631ce90f28644f54aeedcb3e389a85174e067d1"
+
+[[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
   name = "github.com/pkg/errors"
   packages = ["."]
   pruneopts = "UT"
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
+
+[[projects]]
+  digest = "1:5ac42d98286216b5e61e3806d8f8a0699dfbf5dbcb2b8ff1bbaabc0847143744"
+  name = "github.com/schollz/progressbar"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "174fa38cf3c3197ba99ada4c98deab7f79d07069"
+  version = "v2.6.0"
 
 [[projects]]
   branch = "master"
@@ -63,11 +103,22 @@
   pruneopts = "UT"
   revision = "d6fb6747feb6e7cfdc44682a024bddf87ef07ec2"
 
+[[projects]]
+  branch = "master"
+  digest = "1:0a40b0bdd57a93e741d8557465be3a2edeec408e9b6399586ad65bbe8e355796"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "fa43e7bc11baaae89f3f902b2b4d832b68234844"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/acarl005/stripansi",
+    "github.com/gosuri/uilive",
     "github.com/pkg/errors",
+    "github.com/schollz/progressbar",
     "github.com/shurcooL/vfsgen",
     "github.com/spf13/cobra",
     "github.com/ttacon/chalk",

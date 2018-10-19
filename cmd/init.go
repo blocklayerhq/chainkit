@@ -40,13 +40,13 @@ func init() {
 }
 
 func initialize(name, rootDir string) {
-	ui.Info("Initializing %s", name)
+	ui.Info("Creating a new blockchain app in %s", ui.Emphasize(rootDir))
 
 	if err := scaffold(name, rootDir); err != nil {
 		ui.Fatal("Failed to initialize: %v", err)
 	}
 
-	build(name, rootDir)
+	build(name, rootDir, false)
 
 	ui.Info("Generating configuration and gensis")
 	if err := dockerRun(rootDir, name, "init"); err != nil {
@@ -56,7 +56,30 @@ func initialize(name, rootDir string) {
 		ui.Fatal("%v", err)
 	}
 
-	ui.Success("%s successfully initialized", name)
+	ui.Success("Sucess! Created %s at %s", ui.Emphasize(name), ui.Emphasize(rootDir))
+	printGettingStarted(name)
+}
+
+func printGettingStarted(name string) {
+	fmt.Printf(`
+Inside that directory, you can run several commands:
+
+  %s
+    Starts the application.
+
+  %s
+    Build the application.
+
+We suggest that you begin by typing:
+  %s %s
+  %s
+`,
+		ui.Emphasize("chainkit start"),
+		ui.Emphasize("chainkit build"),
+		ui.Emphasize("cd"),
+		name,
+		ui.Emphasize("chainkit start"),
+	)
 }
 
 func scaffold(name, rootDir string) error {

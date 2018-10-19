@@ -32,6 +32,10 @@ func Fatal(msg string, args ...interface{}) {
 	os.Exit(1)
 }
 
+func Small(msg string) string {
+	return chalk.Dim.TextStyle(msg)
+}
+
 func Emphasize(msg string) string {
 	return chalk.Bold.TextStyle(chalk.Yellow.Color(msg))
 }

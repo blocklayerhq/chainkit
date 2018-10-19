@@ -3,14 +3,22 @@ FROM golang:alpine AS build-env
 # Set working directory for the build
 WORKDIR /go/src/{{ .GoPkg }}
 
-# Add source files
-COPY . .
+# Setup build environment
+RUN apk add --no-cache curl git && \
+    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 
-# Install dependencies
-RUN \
-    apk add --no-cache curl git && \
-    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh && \
-    dep ensure -v
+# Copy only the dependency manifests
+COPY Gopkg.toml Gopkg.lock ./
+
+# Fetch dependencies
+RUN dep ensure -v --vendor-only
+
+# Build dependencies
+RUN find vendor -maxdepth 2 -mindepth 2 -type d -exec \
+    sh -c 'CGO_ENABLED=0 go build -v -ldflags "-s -w" {{ .GoPkg }}/{}/... || true' \;
+
+# Add source files
+COPY . ./
 
 # Build and install
 RUN \
