@@ -3,14 +3,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7736fc6da04620727f8f3aa2ced8d77be8e074a302820937aa5993848c769b27"
-  name = "github.com/ZondaX/hid-go"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "48b08affede2cea076a3cf13b2e3f72ed262b743"
-
-[[projects]]
-  branch = "master"
   digest = "1:09a7f74eb6bb3c0f14d8926610c87f569c5cff68e978d30e9a3540aeb626fdf0"
   name = "github.com/bartekn/go-bip39"
   packages = ["."]
@@ -50,19 +42,16 @@
 
 [[projects]]
   branch = "develop"
-  digest = "1:7b606d1bab7c259233f4dcfa8e6a2837ec335d81eef7b2a1d553cd6b7512f35d"
+  digest = "1:b75b6c13373ea2f67576728c6c52b57429fae51890676b59ddd50ae39bd3ba12"
   name = "github.com/cosmos/cosmos-sdk"
   packages = [
     "baseapp",
     "client",
     "client/context",
     "client/keys",
-    "client/lcd",
-    "client/lcd/statik",
     "client/rpc",
     "client/tx",
     "client/utils",
-    "cmd/gaia/app",
     "cmd/gaia/init",
     "codec",
     "crypto",
@@ -72,42 +61,15 @@
     "server",
     "server/config",
     "store",
-    "tests",
     "types",
     "version",
     "x/auth",
     "x/auth/client/cli",
-    "x/auth/client/rest",
     "x/auth/client/txbuilder",
     "x/bank",
-    "x/bank/client",
-    "x/bank/client/cli",
-    "x/bank/client/rest",
-    "x/distribution",
-    "x/distribution/keeper",
-    "x/distribution/tags",
-    "x/distribution/types",
-    "x/gov",
-    "x/gov/client/rest",
-    "x/gov/tags",
-    "x/ibc",
-    "x/ibc/client/cli",
-    "x/mock",
-    "x/params",
-    "x/params/subspace",
-    "x/slashing",
-    "x/slashing/client/cli",
-    "x/slashing/client/rest",
-    "x/stake",
-    "x/stake/client/cli",
-    "x/stake/client/rest",
-    "x/stake/keeper",
-    "x/stake/querier",
-    "x/stake/tags",
-    "x/stake/types",
   ]
   pruneopts = "UT"
-  revision = "ad05d7cc334d8a1648180e9b8b96350a51bd4467"
+  revision = "505c356f20d0d8ecbe3ccaeaba7f63f0a018ca38"
 
 [[projects]]
   digest = "1:e8a3550c8786316675ff54ad6f09d265d129c9d986919af7f541afba50d87ce2"
@@ -117,12 +79,12 @@
   revision = "52158e4697b87de16ed390e1bdaf813e581008fa"
 
 [[projects]]
-  digest = "1:a2c1d0e43bd3baaa071d1b9ed72c27d78169b2b269f71c105ac4ba34b1be4a39"
+  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "UT"
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:c7644c73a3d23741fdba8a99b1464e021a224b7e205be497271a8003a15ca41b"
@@ -383,14 +345,6 @@
   revision = "185b4288413d2a0dd0806f78c90dde719829e5ae"
 
 [[projects]]
-  digest = "1:ea0700160aca4ef099f4e06686a665a87691f4248dddd40796925eda2e46bd64"
-  name = "github.com/rakyll/statik"
-  packages = ["fs"]
-  pruneopts = "UT"
-  revision = "aa8a7b1baecd0f31a436bf7956fcdcc609a83035"
-  version = "v0.1.4"
-
-[[projects]]
   digest = "1:c4556a44e350b50a490544d9b06e9fba9c286c21d6c0e47f54f3a9214597298c"
   name = "github.com/rcrowley/go-metrics"
   packages = ["."]
@@ -585,14 +539,6 @@
   version = "v0.25.0"
 
 [[projects]]
-  digest = "1:7886f86064faff6f8d08a3eb0e8c773648ff5a2e27730831e2bfbf07467f6666"
-  name = "github.com/zondax/ledger-goclient"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "58598458c11bc0ad1c1b8dac3dc3e11eaf270b79"
-  version = "v0.1.0"
-
-[[projects]]
   branch = "master"
   digest = "1:aaff04fa01d9b824fde6799759cc597b3ac3671b9ad31924c28b6557d0ee5284"
   name = "golang.org/x/crypto"
@@ -722,29 +668,17 @@
     "github.com/cosmos/cosmos-sdk/baseapp",
     "github.com/cosmos/cosmos-sdk/client",
     "github.com/cosmos/cosmos-sdk/client/keys",
-    "github.com/cosmos/cosmos-sdk/client/lcd",
-    "github.com/cosmos/cosmos-sdk/client/lcd/statik",
     "github.com/cosmos/cosmos-sdk/client/rpc",
     "github.com/cosmos/cosmos-sdk/client/tx",
     "github.com/cosmos/cosmos-sdk/cmd/gaia/init",
     "github.com/cosmos/cosmos-sdk/codec",
     "github.com/cosmos/cosmos-sdk/server",
-    "github.com/cosmos/cosmos-sdk/tests",
     "github.com/cosmos/cosmos-sdk/types",
-    "github.com/cosmos/cosmos-sdk/version",
     "github.com/cosmos/cosmos-sdk/x/auth",
     "github.com/cosmos/cosmos-sdk/x/auth/client/cli",
     "github.com/cosmos/cosmos-sdk/x/bank",
-    "github.com/cosmos/cosmos-sdk/x/bank/client/cli",
-    "github.com/cosmos/cosmos-sdk/x/ibc",
-    "github.com/cosmos/cosmos-sdk/x/ibc/client/cli",
-    "github.com/cosmos/cosmos-sdk/x/slashing/client/cli",
-    "github.com/cosmos/cosmos-sdk/x/stake/client/cli",
     "github.com/spf13/cobra",
-    "github.com/spf13/viper",
-    "github.com/stretchr/testify/require",
     "github.com/tendermint/tendermint/abci/types",
-    "github.com/tendermint/tendermint/crypto/ed25519",
     "github.com/tendermint/tendermint/libs/cli",
     "github.com/tendermint/tendermint/libs/common",
     "github.com/tendermint/tendermint/libs/db",

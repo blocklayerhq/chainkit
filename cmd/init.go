@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/blocklayerhq/chainkit/pkg/httpfs"
+	"github.com/blocklayerhq/chainkit/pkg/ui"
 	"github.com/blocklayerhq/chainkit/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -17,7 +18,7 @@ import (
 
 type templateContext struct {
 	Name    string
-	WorkDir string
+	RootDir string
 	GoPkg   string
 }
 
@@ -25,18 +26,10 @@ var initCmd = &cobra.Command{
 	Use:   "init <name>",
 	Short: "Initialize an application",
 	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-
-		rootDir, err := getCwd(cmd)
-		if err != nil {
-			return err
-		}
-
-		if err := initialize(name, rootDir); err != nil {
-			return err
-		}
-		return nil
+		rootDir := path.Join(getCwd(cmd), name)
+		initialize(name, rootDir)
 	},
 }
 
@@ -46,26 +39,50 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
-func initialize(name, rootDir string) error {
+func initialize(name, rootDir string) {
+	ui.Info("Initializing %s", name)
+
+	if err := scaffold(name, rootDir); err != nil {
+		ui.Fatal("Failed to initialize: %v", err)
+	}
+
+	build(name, rootDir)
+
+	ui.Info("Generating configuration and gensis")
+	if err := dockerRun(rootDir, name, "init"); err != nil {
+		ui.Fatal("Initialization failed: %v", err)
+	}
+	if err := ui.Tree(path.Join(rootDir, "data")); err != nil {
+		ui.Fatal("%v", err)
+	}
+
+	ui.Success("%s successfully initialized", name)
+}
+
+func scaffold(name, rootDir string) error {
+	ui.Info("Scaffolding base application")
+
 	gosource := goSrc()
 
 	if !strings.HasPrefix(rootDir, gosource) {
 		return fmt.Errorf("you must run this command within your GOPATH (%q)", goPath())
 	}
-	workDir := path.Join(rootDir, name)
 
 	// Make sure the destination path doesn't exist.
-	if _, err := os.Stat(workDir); !os.IsNotExist(err) {
-		return fmt.Errorf("destination path %q already exists", workDir)
+	if _, err := os.Stat(rootDir); !os.IsNotExist(err) {
+		return fmt.Errorf("destination path %q already exists", rootDir)
 	}
 
 	ctx := &templateContext{
 		Name:    name,
-		WorkDir: workDir,
-		GoPkg:   strings.TrimPrefix(workDir, gosource+"/"),
+		RootDir: rootDir,
+		GoPkg:   strings.TrimPrefix(rootDir, gosource+"/"),
 	}
 
-	if err := extractFiles(ctx, workDir); err != nil {
+	if err := extractFiles(ctx, rootDir); err != nil {
+		return err
+	}
+	if err := ui.Tree(rootDir); err != nil {
 		return err
 	}
 
@@ -77,7 +94,6 @@ func extractFiles(ctx *templateContext, dest string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(path)
 		return extractFile(ctx, path, dest, fi)
 	})
 	return err
@@ -91,7 +107,6 @@ func extractFile(ctx *templateContext, src, dst string, fi os.FileInfo) error {
 	}
 
 	dstPath := path.Join(dst, string(parsedSrc))
-	fmt.Println(src, dst, dstPath)
 
 	if fi.IsDir() {
 		return os.MkdirAll(dstPath, fi.Mode())

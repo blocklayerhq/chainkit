@@ -49,6 +49,20 @@
   revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
   version = "v1.0.3"
 
+[[projects]]
+  digest = "1:240c58fb9b6c5599cb5bb3e382a426bb5715d90b845535f597ce90ac1aeaa40d"
+  name = "github.com/ttacon/chalk"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "22c06c80ed312dcb6e1cf394f9634aa2c4676e22"
+
+[[projects]]
+  digest = "1:530b61e812573f3600e7c23b1c63ce685217482389bfd85e4b7bfd21692c2f70"
+  name = "github.com/xlab/treeprint"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d6fb6747feb6e7cfdc44682a024bddf87ef07ec2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -56,6 +70,8 @@
     "github.com/pkg/errors",
     "github.com/shurcooL/vfsgen",
     "github.com/spf13/cobra",
+    "github.com/ttacon/chalk",
+    "github.com/xlab/treeprint",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
