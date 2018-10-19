@@ -23,7 +23,6 @@
   name = "github.com/cosmos/cosmos-sdk"
   branch = "develop"
 
-
 [[override]]
   name = "github.com/golang/protobuf"
   version = "=1.1.0"
@@ -31,14 +30,6 @@
 [[constraint]]
   name = "github.com/spf13/cobra"
   version = "~0.0.1"
-
-[[constraint]]
-  name = "github.com/spf13/viper"
-  version = "~1.0.0"
-
-[[constraint]]
-  name = "github.com/stretchr/testify"
-  version = "=1.2.1"
 
 [[override]]
   name = "github.com/tendermint/go-amino"
@@ -52,11 +43,6 @@
   name = "github.com/tendermint/tendermint"
   version = "=0.25.0"
 
-## transitive deps, with releases:
-
-[[override]]
-  name = "github.com/davecgh/go-spew"
-  version = "=v1.1.0"
 
 ## transitive deps, without releases:
 #

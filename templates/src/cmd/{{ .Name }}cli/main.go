@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	app "github.com/blocklayerhq/chainkit/builder/myapp"
+	app "{{ .GoPkg }}"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -17,10 +17,10 @@ const storeAcc = "acc"
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "myappcli",
-		Short: "MyApp Client",
+		Use:   "{{ .Name }}cli",
+		Short: "{{ .Name }} Client",
 	}
-	DefaultCLIHome = os.ExpandEnv("$HOME/.myappcli")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.{{ .Name }}cli")
 )
 
 func main() {

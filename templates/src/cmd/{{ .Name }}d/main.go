@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	app "github.com/blocklayerhq/chainkit/builder/myapp"
+	app "{{ .GoPkg }}"
 	gaiaInit "github.com/cosmos/cosmos-sdk/cmd/gaia/init"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/spf13/cobra"
@@ -17,15 +17,15 @@ import (
 )
 
 // DefaultNodeHome fixme
-var DefaultNodeHome = os.ExpandEnv("$HOME/.myappd")
+var DefaultNodeHome = os.ExpandEnv("$HOME/.{{ .Name }}d")
 
 func main() {
 	cdc := app.MakeCodec()
 	ctx := server.NewDefaultContext()
 	cobra.EnableCommandSorting = false
 	rootCmd := &cobra.Command{
-		Use:               "myappd",
-		Short:             "MyApp App Daemon (server)",
+		Use:               "{{ .Name }}d",
+		Short:             "{{ .Name }} App Daemon (server)",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}
 

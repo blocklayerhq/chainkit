@@ -14,8 +14,8 @@ RUN \
 
 # Build and install
 RUN \
-    CGO_ENABLED=0 go build -v -ldflags "-s -w" -o build/{{ .Name }}d ./cmd/basecoind && \
-	CGO_ENABLED=0 go build -v -ldflags "-s -w" -o build/{{ .Name }}cli ./cmd/basecli
+    CGO_ENABLED=0 go build -v -ldflags "-s -w" -o build/{{ .Name }}d ./cmd/{{ .Name}}d && \
+    CGO_ENABLED=0 go build -v -ldflags "-s -w" -o build/{{ .Name }}cli ./cmd/{{ .Name}}cli
 
 # Final image
 FROM alpine:edge
