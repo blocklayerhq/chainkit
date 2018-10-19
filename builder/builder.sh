@@ -28,10 +28,27 @@ build() {
     echo "Build."
 }
 
+run_voyager() {
+    data_dir="$(pwd)/data"
+    export COSMOS_HOME="$data_dir"
+    export COSMOS_NODE=localhost
+    open /Applications/Cosmos\ Voyager.app
+}
+
 run() {
-    echo "Run."
-    # invoke build
-    #TBD
+    (
+        cd $WORKDIR/$APP_NAME
+        data_dir="$(pwd)/data"
+        echo "Run."
+        run_voyager
+        echo docker run --rm -it \
+            -v "${data_dir}/${APP_NAME}d:/root/.${APP_NAME}d" \
+            -v "${data_dir}/${APP_NAME}cli:/root/.${APP_NAME}cli" \
+            -p 26656-26657:26656-26657 \
+            ${APP_NAME}:latest ${APP_NAME}d start
+        sleep 1
+        pkill "Cosmos Voyager"
+    )
 }
 
 case "$1" in
