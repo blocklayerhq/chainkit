@@ -10,28 +10,12 @@
   revision = "5a71ef0e047df0427e87a79f27009029921f1f9b"
 
 [[projects]]
-  branch = "master"
-  digest = "1:cde3502ff38bf880c3a783acc5b48754aa509c651c4902c68726d2769883e9de"
-  name = "github.com/gosuri/uilive"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "ac356e6e42cd31fcef8e6aec13ae9ed6fe87713e"
-
-[[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   pruneopts = "UT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
-
-[[projects]]
-  digest = "1:0981502f9816113c9c8c4ac301583841855c8cf4da8c72f696b3ebedf6d0e4e5"
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c"
-  version = "v0.0.4"
 
 [[projects]]
   branch = "master"
@@ -90,6 +74,14 @@
   version = "v1.0.3"
 
 [[projects]]
+  digest = "1:da8d4acfde6ab8378152320f96377912e81200e5ac65232a22782163a710e5a4"
+  name = "github.com/tj/go-spin"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "30574f5fadef1aa5c61d4c42e936785af9f03ada"
+  version = "v1.1.0"
+
+[[projects]]
   digest = "1:240c58fb9b6c5599cb5bb3e382a426bb5715d90b845535f597ce90ac1aeaa40d"
   name = "github.com/ttacon/chalk"
   packages = ["."]
@@ -105,9 +97,20 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0a40b0bdd57a93e741d8557465be3a2edeec408e9b6399586ad65bbe8e355796"
+  digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
+  name = "golang.org/x/crypto"
+  packages = ["ssh/terminal"]
+  pruneopts = "UT"
+  revision = "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f5aa274a0377f85735edc7fedfb0811d3cbc20af91633797cb359e29c3272271"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "unix",
+    "windows",
+  ]
   pruneopts = "UT"
   revision = "fa43e7bc11baaae89f3f902b2b4d832b68234844"
 
@@ -116,13 +119,14 @@
   analyzer-version = 1
   input-imports = [
     "github.com/acarl005/stripansi",
-    "github.com/gosuri/uilive",
     "github.com/pkg/errors",
     "github.com/schollz/progressbar",
     "github.com/shurcooL/vfsgen",
     "github.com/spf13/cobra",
+    "github.com/tj/go-spin",
     "github.com/ttacon/chalk",
     "github.com/xlab/treeprint",
+    "golang.org/x/crypto/ssh/terminal",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

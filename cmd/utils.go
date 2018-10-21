@@ -111,10 +111,14 @@ func dockerBuild(rootDir, name string, verbose bool) error {
 		var (
 			progress *progressbar.ProgressBar
 		)
+
+		// Clear the console on exit.
+		defer ui.Live("")
+
 		for scanner.Scan() {
 			text := stripansi.Strip(scanner.Text())
 
-			// Dockerfile step
+			// Print the current build step.
 			if strings.HasPrefix(text, "Step ") {
 				switch {
 				case strings.Contains(text, "RUN apk add --no-cache"):
@@ -128,15 +132,19 @@ func dockerBuild(rootDir, name string, verbose bool) error {
 				}
 			}
 
-			// Progress bars
+			// Non-verbose output
 			if !verbose {
 				var (
 					step  int
 					total int
 				)
 				sr := strings.NewReader(text)
+
+				// Check if this is a progressbar-style output (e.g. "X out of Y").
 				if n, _ := fmt.Fscanf(sr, "(%d/%d) Wrote", &step, &total); n == 2 {
 					if progress == nil {
+						// Clear current line.
+						ui.Live("")
 						progress = progressbar.NewOptions(
 							total,
 							progressbar.OptionSetTheme(progressbar.Theme{
@@ -145,6 +153,7 @@ func dockerBuild(rootDir, name string, verbose bool) error {
 								BarStart:      "[",
 								BarEnd:        "]",
 							}),
+							progressbar.OptionSetWidth(ui.ConsoleWidth()/2),
 						)
 					}
 					progress.Add(1)
@@ -153,9 +162,13 @@ func dockerBuild(rootDir, name string, verbose bool) error {
 						progress.Clear()
 						progress = nil
 					}
+				} else {
+					// Otherwise, live print the line (this will replace the previous output line)
+					ui.Live(text)
 				}
 			}
 
+			// In verbose mode, just print the line.
 			if verbose {
 				ui.Verbose(text)
 			}
@@ -173,5 +186,6 @@ func dockerBuild(rootDir, name string, verbose bool) error {
 	if err := scanner.Err(); err != nil {
 		return err
 	}
+
 	return nil
 }

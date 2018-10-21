@@ -7,8 +7,14 @@ import (
 	"path"
 	"strings"
 
+	spin "github.com/tj/go-spin"
 	"github.com/ttacon/chalk"
 	"github.com/xlab/treeprint"
+	"golang.org/x/crypto/ssh/terminal"
+)
+
+var (
+	spinner = spin.New()
 )
 
 func Info(msg string, args ...interface{}) {
@@ -40,6 +46,31 @@ func Emphasize(msg string) string {
 	return chalk.Bold.TextStyle(chalk.Yellow.Color(msg))
 }
 
+func ConsoleWidth() int {
+	width, _, err := terminal.GetSize(0)
+	if err != nil || width <= 0 {
+		return 80
+	}
+	return width
+}
+
+func Live(msg string) {
+	lineLength := ConsoleWidth() - 5
+	msg = strings.TrimSpace(msg)
+
+	// Truncate length
+	if len(msg) > lineLength {
+		msg = msg[0:lineLength-2] + "…"
+	}
+
+	// Pad with spaces to clear previous line.
+	for len(msg) < lineLength {
+		msg += " "
+	}
+
+	fmt.Printf("%s %s\r", spinner.Next(), Small(msg))
+}
+
 func Tree(p string) error {
 	root := treeprint.New()
 	root.SetValue(p)
@@ -49,6 +80,7 @@ func Tree(p string) error {
 	Verbose(strings.TrimSpace(root.String()))
 	return nil
 }
+
 func walk(p string, node treeprint.Tree) error {
 	files, err := ioutil.ReadDir(p)
 	if err != nil {
