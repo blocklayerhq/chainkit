@@ -55,7 +55,7 @@ func create(name, rootDir string) {
 	if err := dockerRun(ctx, rootDir, name, "init"); err != nil {
 		ui.Fatal("Initialization failed: %v", err)
 	}
-	if err := ui.Tree(path.Join(rootDir, "data")); err != nil {
+	if err := ui.Tree(path.Join(rootDir, "data"), nil); err != nil {
 		ui.Fatal("%v", err)
 	}
 
@@ -108,7 +108,7 @@ func scaffold(name, rootDir string) error {
 	if err := extractFiles(ctx, rootDir); err != nil {
 		return err
 	}
-	if err := ui.Tree(rootDir); err != nil {
+	if err := ui.Tree(rootDir, []string{"k8s"}); err != nil {
 		return err
 	}
 
