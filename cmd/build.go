@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/blocklayerhq/chainkit/pkg/ui"
@@ -30,8 +31,9 @@ func init() {
 }
 
 func build(name, rootDir string, verbose bool) {
+	ctx := context.Background()
 	ui.Info("Building %s", name)
-	if err := dockerBuild(rootDir, name, verbose); err != nil {
+	if err := dockerBuild(ctx, rootDir, name, verbose); err != nil {
 		ui.Fatal("Failed to build the application: %v", err)
 	}
 	ui.Success("Build successfull")

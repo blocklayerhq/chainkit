@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/blocklayerhq/chainkit/pkg/ui"
@@ -25,9 +26,10 @@ func init() {
 }
 
 func start(name, rootDir string) {
+	ctx := context.Background()
 	ui.Info("Starting %s", name)
 	ui.Success("Application is live at %s", ui.Emphasize("http://localhost:26657/"))
-	if err := dockerRun(rootDir, name, "start"); err != nil {
+	if err := dockerRun(ctx, rootDir, name, "start"); err != nil {
 		ui.Fatal("Failed to start the application: %v", err)
 	}
 }

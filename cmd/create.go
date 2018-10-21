@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -41,6 +42,7 @@ func init() {
 }
 
 func create(name, rootDir string) {
+	ctx := context.Background()
 	ui.Info("Creating a new blockchain app in %s", ui.Emphasize(rootDir))
 
 	if err := scaffold(name, rootDir); err != nil {
@@ -50,7 +52,7 @@ func create(name, rootDir string) {
 	build(name, rootDir, false)
 
 	ui.Info("Generating configuration and gensis")
-	if err := dockerRun(rootDir, name, "init"); err != nil {
+	if err := dockerRun(ctx, rootDir, name, "init"); err != nil {
 		ui.Fatal("Initialization failed: %v", err)
 	}
 	if err := ui.Tree(path.Join(rootDir, "data")); err != nil {

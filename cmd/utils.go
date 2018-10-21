@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -48,7 +49,7 @@ func goSrc() string {
 	return path.Join(goPath(), "src")
 }
 
-func dockerRun(rootDir, name string, args ...string) error {
+func dockerRun(ctx context.Context, rootDir, name string, args ...string) error {
 	dataDir := path.Join(rootDir, "data")
 
 	daemonName := name + "d"
@@ -68,21 +69,22 @@ func dockerRun(rootDir, name string, args ...string) error {
 		"-p", "26657:26657",
 		"-v", daemonDir + ":" + daemonDirContainer,
 		"-v", cliDir + ":" + cliDirContainer,
+		"--name", name,
 		name + ":latest",
 		daemonName,
 	}
 	cmd = append(cmd, args...)
 
-	return docker(rootDir, cmd...)
+	return docker(ctx, rootDir, cmd...)
 }
 
-func docker(rootDir string, args ...string) error {
-	return run(rootDir, "docker", args...)
+func docker(ctx context.Context, rootDir string, args ...string) error {
+	return run(ctx, rootDir, "docker", args...)
 }
 
-func run(rootDir, command string, args ...string) error {
+func run(ctx context.Context, rootDir, command string, args ...string) error {
 	ui.Verbose("$ %s %s", command, strings.Join(args, " "))
-	cmd := exec.Command(command)
+	cmd := exec.CommandContext(ctx, command)
 	cmd.Args = append([]string{command}, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -91,8 +93,8 @@ func run(rootDir, command string, args ...string) error {
 	return cmd.Run()
 }
 
-func dockerBuild(rootDir, name string, verbose bool) error {
-	cmd := exec.Command("docker", "build", "-t", name, rootDir)
+func dockerBuild(ctx context.Context, rootDir, name string, verbose bool) error {
+	cmd := exec.CommandContext(ctx, "docker", "build", "-t", name, rootDir)
 	outReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
