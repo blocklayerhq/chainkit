@@ -55,7 +55,7 @@ func create(name, rootDir string) {
 	if err := dockerRun(ctx, rootDir, name, "init"); err != nil {
 		ui.Fatal("Initialization failed: %v", err)
 	}
-	if err := ui.Tree(path.Join(rootDir, "data")); err != nil {
+	if err := ui.Tree(path.Join(rootDir, "data"), nil); err != nil {
 		ui.Fatal("%v", err)
 	}
 
@@ -108,7 +108,7 @@ func scaffold(name, rootDir string) error {
 	if err := extractFiles(ctx, rootDir); err != nil {
 		return err
 	}
-	if err := ui.Tree(rootDir); err != nil {
+	if err := ui.Tree(rootDir, []string{"k8s"}); err != nil {
 		return err
 	}
 
@@ -127,16 +127,12 @@ func extractFiles(ctx *templateContext, dest string) error {
 
 func extractFile(ctx *templateContext, src, dst string, fi os.FileInfo) error {
 	// Templatize the file name.
-	parsedSrc, err := templatize(ctx, src)
+	parsedSrc, err := templatize(ctx, src, src)
 	if err != nil {
 		return err
 	}
 
 	dstPath := path.Join(dst, string(parsedSrc))
-	if filepath.Ext(dstPath) == ".tpl" {
-		dstPath = strings.TrimSuffix(dstPath, ".tpl")
-	}
-
 	if fi.IsDir() {
 		return os.MkdirAll(dstPath, fi.Mode())
 	}
@@ -145,20 +141,29 @@ func extractFile(ctx *templateContext, src, dst string, fi os.FileInfo) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to read template file")
 	}
-	output, err := templatize(ctx, string(data))
-	if err != nil {
-		return errors.Wrap(err, "unable to templetaize")
+
+	// Handle templates
+	if filepath.Ext(dstPath) == ".tmpl" {
+		// Parse template
+		data, err = templatize(ctx, dstPath, string(data))
+		if err != nil {
+			return errors.Wrap(err, "unable to templetaize")
+		}
+
+		// Remove .tpl from the file path
+		dstPath = strings.TrimSuffix(dstPath, ".tmpl")
+
 	}
 
-	if err := ioutil.WriteFile(dstPath, output, fi.Mode()); err != nil {
+	if err := ioutil.WriteFile(dstPath, data, fi.Mode()); err != nil {
 		return errors.Wrap(err, "unable to write to destination")
 	}
 
 	return nil
 }
 
-func templatize(ctx *templateContext, input string) ([]byte, error) {
-	t, err := template.New("chainkit").Parse(input)
+func templatize(ctx *templateContext, name, input string) ([]byte, error) {
+	t, err := template.New(name).Parse(input)
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,81 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: {{ include "cosmos.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "cosmos.name" . }}
+    helm.sh/chart: {{ include "cosmos.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cosmos.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data-volume
+        labels:
+          app.kubernetes.io/name: {{ include "cosmos.name" . }}
+          helm.sh/chart: {{ include "cosmos.chart" . }}
+          app.kubernetes.io/instance: {{ .Release.Name }}
+          app.kubernetes.io/managed-by: {{ .Release.Service }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.storage.size }}
+        storageClassName: {{ include "cosmos.fullname" . }}-storageclass
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "cosmos.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ include "cosmos.fullname" . }}-configmap
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["{{ .Values.command }}", "start"]
+          ports:
+            - name: peer
+              containerPort: 26656
+              protocol: TCP
+            - name: rpc
+              containerPort: 26657
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 26657
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 26657
+          volumeMounts:
+            - name: config-volume
+              mountPath: {{ .Values.rootDir }}/config
+            - name: data-volume
+              mountPath: {{ .Values.rootDir }}/data
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
