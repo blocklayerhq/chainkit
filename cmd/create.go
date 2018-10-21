@@ -23,24 +23,24 @@ type templateContext struct {
 	GoPkg   string
 }
 
-var initCmd = &cobra.Command{
-	Use:   "init <name>",
-	Short: "Initialize an application",
+var createCmd = &cobra.Command{
+	Use:   "create <name>",
+	Short: "Create an application",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		rootDir := path.Join(getCwd(cmd), name)
-		initialize(name, rootDir)
+		create(name, rootDir)
 	},
 }
 
 func init() {
-	initCmd.Flags().String("cwd", ".", "specifies the current working directory")
+	createCmd.Flags().String("cwd", ".", "specifies the current working directory")
 
-	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(createCmd)
 }
 
-func initialize(name, rootDir string) {
+func create(name, rootDir string) {
 	ui.Info("Creating a new blockchain app in %s", ui.Emphasize(rootDir))
 
 	if err := scaffold(name, rootDir); err != nil {
