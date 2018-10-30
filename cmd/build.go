@@ -4,6 +4,7 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/blocklayerhq/chainkit/pkg/builder"
 	"github.com/blocklayerhq/chainkit/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -33,7 +34,11 @@ func init() {
 func build(name, rootDir string, verbose bool) {
 	ctx := context.Background()
 	ui.Info("Building %s", name)
-	if err := dockerBuild(ctx, rootDir, name, verbose); err != nil {
+	b := builder.New(rootDir, name)
+	opts := builder.BuildOpts{
+		Verbose: verbose,
+	}
+	if err := b.Build(ctx, opts); err != nil {
 		ui.Fatal("Failed to build the application: %v", err)
 	}
 	ui.Success("Build successfull")
