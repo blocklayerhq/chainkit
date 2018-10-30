@@ -1,9 +1,13 @@
 package builder
 
 import (
+	"bytes"
 	"context"
 	"io"
+	"io/ioutil"
 	"os/exec"
+
+	"github.com/blocklayerhq/chainkit/pkg/ui"
 )
 
 // Builder is a wrapper around `docker build` which provides a better UX.
@@ -41,12 +45,18 @@ func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
 	}
 	defer errReader.Close()
 
+	// Combine stdout and stderr into a single reader.
 	cmdReader := io.MultiReader(outReader, errReader)
+
+	// Keep the build output as a buffer.
+	// We'll need it to log build errors.
+	var output bytes.Buffer
+	tee := io.TeeReader(cmdReader, &output)
 
 	errCh := make(chan error)
 	go func() {
 		defer close(errCh)
-		errCh <- b.parser.Parse(cmdReader, opts)
+		errCh <- b.parser.Parse(tee, opts)
 	}()
 	err = cmd.Start()
 	if err != nil {
@@ -55,12 +65,31 @@ func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
 
 	err = cmd.Wait()
 	if err != nil {
+		b.buildLog(output)
 		return err
 	}
 
 	if err := <-errCh; err != nil {
+		b.buildLog(output)
 		return err
 	}
+
+	return nil
+}
+
+func (b *Builder) buildLog(output bytes.Buffer) error {
+	logfile, err := ioutil.TempFile("", "chainkit-build.*.log")
+	if err != nil {
+		return err
+	}
+	defer logfile.Close()
+
+	if _, err := logfile.Write(output.Bytes()); err != nil {
+		return err
+	}
+
+	ui.Error("A complete log of this build can be found in:")
+	ui.Error("    %s", logfile.Name())
 
 	return nil
 }
