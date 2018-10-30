@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -45,6 +47,18 @@ func startExplorer(ctx context.Context, name, rootDir string) {
 func start(name, rootDir string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	ui.Info("Starting %s", name)
+
+	// Initialize if needed.
+	if _, err := os.Stat(path.Join(rootDir, "data")); os.IsNotExist(err) {
+		ui.Info("Generating configuration and gensis")
+		if err := dockerRun(ctx, rootDir, name, "init"); err != nil {
+			ui.Fatal("Initialization failed: %v", err)
+		}
+		if err := ui.Tree(path.Join(rootDir, "data"), nil); err != nil {
+			ui.Fatal("%v", err)
+		}
+	}
+
 	ui.Success("Application is live at:     %s", ui.Emphasize("http://localhost:26657/"))
 	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize("http://localhost:8080/"))
 	defer cancel()
