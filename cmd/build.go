@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"context"
-	"path/filepath"
 
 	"github.com/blocklayerhq/chainkit/pkg/builder"
+	"github.com/blocklayerhq/chainkit/pkg/project"
 	"github.com/blocklayerhq/chainkit/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -25,10 +25,12 @@ var buildCmd = &cobra.Command{
 			ui.Fatal("unable to resolve flag: %v", err)
 		}
 
-		rootDir := getCwd(cmd)
-		name := filepath.Base(rootDir)
+		p, err := project.Load(getCwd(cmd))
+		if err != nil {
+			ui.Fatal("%v", err)
+		}
 
-		b := builder.New(rootDir, name)
+		b := builder.New(p)
 		opts := builder.BuildOpts{
 			Verbose: verbose,
 			NoCache: noCache,

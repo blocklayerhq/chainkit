@@ -13,6 +13,7 @@ import (
 
 	"github.com/blocklayerhq/chainkit/pkg/builder"
 	"github.com/blocklayerhq/chainkit/pkg/httpfs"
+	"github.com/blocklayerhq/chainkit/pkg/project"
 	"github.com/blocklayerhq/chainkit/pkg/ui"
 	"github.com/blocklayerhq/chainkit/templates"
 	"github.com/pkg/errors"
@@ -31,8 +32,12 @@ var createCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		rootDir := path.Join(getCwd(cmd), name)
-		create(name, rootDir)
+		p, err := project.Create(getCwd(cmd), name)
+		if err != nil {
+			ui.Fatal("%v", err)
+		}
+
+		create(p)
 	},
 }
 
@@ -42,25 +47,25 @@ func init() {
 	rootCmd.AddCommand(createCmd)
 }
 
-func create(name, rootDir string) {
+func create(p *project.Project) {
 	ctx := context.Background()
 
-	ui.Info("Creating a new blockchain app in %s", ui.Emphasize(rootDir))
+	ui.Info("Creating a new blockchain app in %s", ui.Emphasize(p.RootDir))
 
-	if err := scaffold(name, rootDir); err != nil {
+	if err := scaffold(p); err != nil {
 		ui.Fatal("Failed to initialize: %v", err)
 	}
 
-	b := builder.New(rootDir, name)
+	b := builder.New(p)
 	if err := b.Build(ctx, builder.BuildOpts{}); err != nil {
 		ui.Fatal("Failed to build the application: %v", err)
 	}
 
-	ui.Success("Success! Created %s at %s", ui.Emphasize(name), ui.Emphasize(rootDir))
-	printGettingStarted(name)
+	ui.Success("Success! Created %s at %s", ui.Emphasize(p.Name), ui.Emphasize(p.RootDir))
+	printGettingStarted(p)
 }
 
-func printGettingStarted(name string) {
+func printGettingStarted(p *project.Project) {
 	fmt.Printf(`
 Inside that directory, you can run several commands:
 
@@ -77,35 +82,35 @@ We suggest that you begin by typing:
 		ui.Emphasize("chainkit start"),
 		ui.Emphasize("chainkit build"),
 		ui.Emphasize("cd"),
-		name,
+		p.Name,
 		ui.Emphasize("chainkit start"),
 	)
 }
 
-func scaffold(name, rootDir string) error {
+func scaffold(p *project.Project) error {
 	ui.Info("Scaffolding base application")
 
 	gosource := goSrc()
 
-	if !strings.HasPrefix(rootDir, gosource) {
+	if !strings.HasPrefix(p.RootDir, gosource) {
 		return fmt.Errorf("you must run this command within your GOPATH (%q)", goPath())
 	}
 
 	// Make sure the destination path doesn't exist.
-	if _, err := os.Stat(rootDir); !os.IsNotExist(err) {
-		return fmt.Errorf("destination path %q already exists", rootDir)
+	if _, err := os.Stat(p.RootDir); !os.IsNotExist(err) {
+		return fmt.Errorf("destination path %q already exists", p.RootDir)
 	}
 
 	ctx := &templateContext{
-		Name:    name,
-		RootDir: rootDir,
-		GoPkg:   strings.TrimPrefix(rootDir, gosource+"/"),
+		Name:    p.Name,
+		RootDir: p.RootDir,
+		GoPkg:   strings.TrimPrefix(p.RootDir, gosource+"/"),
 	}
 
-	if err := extractFiles(ctx, rootDir); err != nil {
+	if err := extractFiles(ctx, p.RootDir); err != nil {
 		return err
 	}
-	if err := ui.Tree(rootDir, []string{"k8s"}); err != nil {
+	if err := ui.Tree(p.RootDir, []string{"k8s"}); err != nil {
 		return err
 	}
 

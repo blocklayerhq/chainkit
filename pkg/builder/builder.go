@@ -7,11 +7,13 @@ import (
 	"io/ioutil"
 	"os/exec"
 
+	"github.com/blocklayerhq/chainkit/pkg/project"
 	"github.com/blocklayerhq/chainkit/pkg/ui"
 )
 
 // Builder is a wrapper around `docker build` which provides a better UX.
 type Builder struct {
+	project *project.Project
 	rootDir string
 	name    string
 	parser  *Parser
@@ -24,22 +26,21 @@ type BuildOpts struct {
 }
 
 // New creates a new Builder.
-func New(rootDir, name string) *Builder {
+func New(project *project.Project) *Builder {
 	return &Builder{
-		rootDir: rootDir,
-		name:    name,
+		project: project,
 		parser:  &Parser{},
 	}
 }
 
 // Build executes a build.
 func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
-	ui.Info("Building %s", b.name)
-	args := []string{"build", "-t", b.name}
+	ui.Info("Building %s", b.project.Name)
+	args := []string{"build", "-t", b.project.Name}
 	if opts.NoCache {
 		args = append(args, "--no-cache")
 	}
-	args = append(args, b.rootDir)
+	args = append(args, b.project.RootDir)
 	cmd := exec.CommandContext(ctx, "docker", args...)
 	outReader, err := cmd.StdoutPipe()
 	if err != nil {
