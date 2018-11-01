@@ -14,6 +14,8 @@ var buildCmd = &cobra.Command{
 	Short: "Build the application",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
+
 		verbose, err := cmd.Flags().GetBool("verbose")
 		if err != nil {
 			ui.Fatal("unable to resolve flag: %v", err)
@@ -25,7 +27,15 @@ var buildCmd = &cobra.Command{
 
 		rootDir := getCwd(cmd)
 		name := filepath.Base(rootDir)
-		build(name, rootDir, verbose, noCache)
+
+		b := builder.New(rootDir, name)
+		opts := builder.BuildOpts{
+			Verbose: verbose,
+			NoCache: noCache,
+		}
+		if err := b.Build(ctx, opts); err != nil {
+			ui.Fatal("Failed to build the application: %v", err)
+		}
 	},
 }
 
@@ -35,18 +45,4 @@ func init() {
 	buildCmd.Flags().Bool("no-cache", false, "disable caching")
 
 	rootCmd.AddCommand(buildCmd)
-}
-
-func build(name, rootDir string, verbose, noCache bool) {
-	ctx := context.Background()
-	ui.Info("Building %s", name)
-	b := builder.New(rootDir, name)
-	opts := builder.BuildOpts{
-		Verbose: verbose,
-		NoCache: noCache,
-	}
-	if err := b.Build(ctx, opts); err != nil {
-		ui.Fatal("Failed to build the application: %v", err)
-	}
-	ui.Success("Build successfull")
 }

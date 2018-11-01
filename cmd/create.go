@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/blocklayerhq/chainkit/pkg/builder"
 	"github.com/blocklayerhq/chainkit/pkg/httpfs"
 	"github.com/blocklayerhq/chainkit/pkg/ui"
 	"github.com/blocklayerhq/chainkit/templates"
@@ -41,13 +43,18 @@ func init() {
 }
 
 func create(name, rootDir string) {
+	ctx := context.Background()
+
 	ui.Info("Creating a new blockchain app in %s", ui.Emphasize(rootDir))
 
 	if err := scaffold(name, rootDir); err != nil {
 		ui.Fatal("Failed to initialize: %v", err)
 	}
 
-	build(name, rootDir, false, false)
+	b := builder.New(rootDir, name)
+	if err := b.Build(ctx, builder.BuildOpts{}); err != nil {
+		ui.Fatal("Failed to build the application: %v", err)
+	}
 
 	ui.Success("Success! Created %s at %s", ui.Emphasize(name), ui.Emphasize(rootDir))
 	printGettingStarted(name)

@@ -34,6 +34,7 @@ func New(rootDir, name string) *Builder {
 
 // Build executes a build.
 func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
+	ui.Info("Building %s", b.name)
 	args := []string{"build", "-t", b.name}
 	if opts.NoCache {
 		args = append(args, "--no-cache")
@@ -80,6 +81,7 @@ func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
 		return err
 	}
 
+	ui.Success("Build successfull")
 	return nil
 }
 
