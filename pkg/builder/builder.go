@@ -20,6 +20,7 @@ type Builder struct {
 // BuildOpts contains a list of build options.
 type BuildOpts struct {
 	Verbose bool
+	NoCache bool
 }
 
 // New creates a new Builder.
@@ -33,7 +34,12 @@ func New(rootDir, name string) *Builder {
 
 // Build executes a build.
 func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
-	cmd := exec.CommandContext(ctx, "docker", "build", "-t", b.name, b.rootDir)
+	args := []string{"build", "-t", b.name}
+	if opts.NoCache {
+		args = append(args, "--no-cache")
+	}
+	args = append(args, b.rootDir)
+	cmd := exec.CommandContext(ctx, "docker", args...)
 	outReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return err

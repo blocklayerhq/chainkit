@@ -47,7 +47,7 @@ func create(name, rootDir string) {
 		ui.Fatal("Failed to initialize: %v", err)
 	}
 
-	build(name, rootDir, false)
+	build(name, rootDir, false, false)
 
 	ui.Success("Sucess! Created %s at %s", ui.Emphasize(name), ui.Emphasize(rootDir))
 	printGettingStarted(name)
