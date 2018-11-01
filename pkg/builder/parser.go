@@ -71,6 +71,11 @@ func (p *Parser) processProgress(text string) bool {
 		total int
 	)
 
+	// Don't show progress bars on small terminals.
+	if ui.ConsoleWidth() < 80 {
+		return false
+	}
+
 	sr := strings.NewReader(text)
 	// Check if this is a progressbar-style output (e.g. "X out of Y").
 	if n, _ := fmt.Fscanf(sr, "(%d/%d) Wrote", &step, &total); n != 2 {
@@ -89,7 +94,7 @@ func (p *Parser) processProgress(text string) bool {
 				BarStart:      "[",
 				BarEnd:        "]",
 			}),
-			progressbar.OptionSetWidth(ui.ConsoleWidth()/2),
+			progressbar.OptionSetWidth(ui.ConsoleWidth()-20),
 		)
 	}
 

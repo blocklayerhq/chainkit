@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"unicode/utf8"
 
 	spin "github.com/tj/go-spin"
 	"github.com/ttacon/chalk"
@@ -16,6 +17,10 @@ import (
 var (
 	spinner = spin.New()
 )
+
+func init() {
+	spinner.Set(spin.Spin1)
+}
 
 func Info(msg string, args ...interface{}) {
 	fmt.Printf("%s %s\n", chalk.Bold.TextStyle(chalk.Blue.Color("==>")), chalk.Bold.TextStyle(fmt.Sprintf(msg, args...)))
@@ -55,20 +60,24 @@ func ConsoleWidth() int {
 }
 
 func Live(msg string) {
-	lineLength := ConsoleWidth() - 5
-	msg = strings.TrimSpace(msg)
+	// Format the message.
+	msg = fmt.Sprintf("%s %s", spinner.Next(), strings.TrimSpace(msg))
 
-	// Truncate length
-	if len(msg) > lineLength {
-		msg = msg[0:lineLength-2] + "…"
+	// Get the actual console width.
+	lineLength := ConsoleWidth()
+
+	// Shorten the message until it fits.
+	for utf8.RuneCountInString(msg) > lineLength {
+		msg = msg[0:len(msg)-4] + "…"
 	}
 
-	// Pad with spaces to clear previous line.
-	for len(msg) < lineLength {
-		msg += " "
+	// Pad the message with spaces until it takes the entire line.
+	// This is in order to clear the previous line.
+	for utf8.RuneCountInString(msg) < lineLength {
+		msg = msg + " "
 	}
 
-	fmt.Printf("%s %s\r", spinner.Next(), Small(msg))
+	fmt.Printf("%s\r", Small(msg))
 }
 
 func Tree(p string, ignore []string) error {
