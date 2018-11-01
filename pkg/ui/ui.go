@@ -26,6 +26,10 @@ func init() {
 	spinner.Set(spin.Spin1)
 }
 
+func EnableColors(enabled bool) {
+	colorize.Disable = !enabled
+}
+
 func Info(msg string, args ...interface{}) {
 	fmt.Printf(colorize.Color("[bold][blue]==> [reset][bold]%s\n"), fmt.Sprintf(msg, args...))
 }
