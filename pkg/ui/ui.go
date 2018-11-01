@@ -8,14 +8,18 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/mitchellh/colorstring"
 	spin "github.com/tj/go-spin"
-	"github.com/ttacon/chalk"
 	"github.com/xlab/treeprint"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
-	spinner = spin.New()
+	spinner  = spin.New()
+	colorize = colorstring.Colorize{
+		Colors: colorstring.DefaultColors,
+		Reset:  true,
+	}
 )
 
 func init() {
@@ -23,19 +27,19 @@ func init() {
 }
 
 func Info(msg string, args ...interface{}) {
-	fmt.Printf("%s %s\n", chalk.Bold.TextStyle(chalk.Blue.Color("==>")), chalk.Bold.TextStyle(fmt.Sprintf(msg, args...)))
+	fmt.Printf(colorize.Color("[bold][blue]==> [reset][bold]%s\n"), fmt.Sprintf(msg, args...))
 }
 
 func Verbose(msg string, args ...interface{}) {
-	fmt.Println(chalk.Dim.TextStyle(fmt.Sprintf(msg, args...)))
+	fmt.Printf(colorize.Color("[dim]%s\n"), fmt.Sprintf(msg, args...))
 }
 
 func Success(msg string, args ...interface{}) {
-	fmt.Printf("  %s %s\n", chalk.Bold.TextStyle(chalk.Green.Color("✔")), chalk.Bold.TextStyle(fmt.Sprintf(msg, args...)))
+	fmt.Printf(colorize.Color("[bold][green]✔[reset][bold] %s\n"), fmt.Sprintf(msg, args...))
 }
 
 func Error(msg string, args ...interface{}) {
-	fmt.Printf("  %s %s\n", chalk.Bold.TextStyle(chalk.Red.Color("✗")), chalk.Bold.TextStyle(fmt.Sprintf(msg, args...)))
+	fmt.Printf(colorize.Color("[bold][red]✗[reset][bold] %s\n"), fmt.Sprintf(msg, args...))
 }
 
 func Fatal(msg string, args ...interface{}) {
@@ -44,11 +48,11 @@ func Fatal(msg string, args ...interface{}) {
 }
 
 func Small(msg string) string {
-	return chalk.Dim.TextStyle(msg)
+	return colorize.Color("[dim]" + msg)
 }
 
 func Emphasize(msg string) string {
-	return chalk.Bold.TextStyle(chalk.Yellow.Color(msg))
+	return colorize.Color("[bold][yellow]" + msg)
 }
 
 func ConsoleWidth() int {

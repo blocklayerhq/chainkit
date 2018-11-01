@@ -49,7 +49,7 @@ func create(name, rootDir string) {
 
 	build(name, rootDir, false, false)
 
-	ui.Success("Sucess! Created %s at %s", ui.Emphasize(name), ui.Emphasize(rootDir))
+	ui.Success("Success! Created %s at %s", ui.Emphasize(name), ui.Emphasize(rootDir))
 	printGettingStarted(name)
 }
 

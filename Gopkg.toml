@@ -37,10 +37,6 @@
   version = "0.8.0"
 
 [[constraint]]
-  name = "github.com/ttacon/chalk"
-  revision = "22c06c80ed312dcb6e1cf394f9634aa2c4676e22"
-
-[[constraint]]
   name = "github.com/xlab/treeprint"
   revision = "d6fb6747feb6e7cfdc44682a024bddf87ef07ec2"
 
@@ -59,3 +55,7 @@
 [[constraint]]
   branch = "master"
   name = "golang.org/x/crypto"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/mitchellh/colorstring"
