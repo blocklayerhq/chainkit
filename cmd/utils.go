@@ -62,7 +62,6 @@ func dockerRun(ctx context.Context, rootDir, name string, args ...string) error 
 		"run", "--rm",
 		"-p", "26656:26656",
 		"-p", "26657:26657",
-		"-p", "8080:8080",
 		"-v", daemonDir + ":" + daemonDirContainer,
 		"-v", cliDir + ":" + cliDirContainer,
 		"--name", name,

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"time"
 
 	"github.com/blocklayerhq/chainkit/pkg/ui"
 	"github.com/spf13/cobra"
@@ -31,17 +30,12 @@ func init() {
 func startExplorer(ctx context.Context, name, rootDir string) {
 	cmd := []string{
 		"run", "--rm",
-		"-e", "NGINX_PORT=8080",
-		"--network", "container:" + name,
-		"samalba/cosmos-explorer-localhost" + ":latest",
+		"-p", "8080:8080",
+		"samalba/cosmos-explorer-localhost:latest",
 	}
-	go func() {
-		// FIXME: wait for the container to be created
-		time.Sleep(3 * time.Second)
-		if err := docker(ctx, rootDir, cmd...); err != nil {
-			ui.Fatal("Failed to start the Explorer: %v", err)
-		}
-	}()
+	if err := docker(ctx, rootDir, cmd...); err != nil {
+		ui.Fatal("Failed to start the Explorer: %v", err)
+	}
 }
 
 func start(name, rootDir string) {
@@ -62,7 +56,7 @@ func start(name, rootDir string) {
 	ui.Success("Application is live at:     %s", ui.Emphasize("http://localhost:26657/"))
 	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize("http://localhost:8080/"))
 	defer cancel()
-	startExplorer(ctx, name, rootDir)
+	go startExplorer(ctx, name, rootDir)
 	if err := dockerRun(ctx, rootDir, name, "start"); err != nil {
 		ui.Fatal("Failed to start the application: %v", err)
 	}
