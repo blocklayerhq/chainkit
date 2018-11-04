@@ -31,7 +31,7 @@ func startExplorer(ctx context.Context, name, rootDir string) {
 	cmd := []string{
 		"run", "--rm",
 		"-p", "8080:8080",
-		"samalba/cosmos-explorer-localhost:latest",
+		"samalba/cosmos-explorer-localdev:latest",
 	}
 	if err := docker(ctx, rootDir, cmd...); err != nil {
 		ui.Fatal("Failed to start the Explorer: %v", err)
