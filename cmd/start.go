@@ -2,10 +2,8 @@ package cmd
 
 import (
 	"context"
-	"os"
-	"path"
-	"path/filepath"
 
+	"github.com/blocklayerhq/chainkit/pkg/project"
 	"github.com/blocklayerhq/chainkit/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -15,9 +13,11 @@ var startCmd = &cobra.Command{
 	Short: "Start the application",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		rootDir := getCwd(cmd)
-		name := filepath.Base(rootDir)
-		start(name, rootDir)
+		p, err := project.Load(getCwd(cmd))
+		if err != nil {
+			ui.Fatal("%v", err)
+		}
+		start(p)
 	},
 }
 
@@ -27,37 +27,31 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 }
 
-func startExplorer(ctx context.Context, name, rootDir string) {
+func startExplorer(ctx context.Context, p *project.Project) {
 	cmd := []string{
 		"run", "--rm",
 		"-p", "8080:8080",
 		"samalba/cosmos-explorer-localdev:latest",
 	}
-	if err := docker(ctx, rootDir, cmd...); err != nil {
+	if err := docker(ctx, p.RootDir, cmd...); err != nil {
 		ui.Fatal("Failed to start the Explorer: %v", err)
 	}
 }
 
-func start(name, rootDir string) {
+func start(p *project.Project) {
 	ctx, cancel := context.WithCancel(context.Background())
-	ui.Info("Starting %s", name)
+	ui.Info("Starting %s", p.Name)
 
 	// Initialize if needed.
-	if _, err := os.Stat(path.Join(rootDir, "data")); os.IsNotExist(err) {
-		ui.Info("Generating configuration and gensis")
-		if err := dockerRun(ctx, rootDir, name, "init"); err != nil {
-			ui.Fatal("Initialization failed: %v", err)
-		}
-		if err := ui.Tree(path.Join(rootDir, "data"), nil); err != nil {
-			ui.Fatal("%v", err)
-		}
+	if err := initialize(ctx, p); err != nil {
+		ui.Fatal("Initialization failed: %v", err)
 	}
 
 	ui.Success("Application is live at:     %s", ui.Emphasize("http://localhost:26657/"))
 	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize("http://localhost:8080/"))
 	defer cancel()
-	go startExplorer(ctx, name, rootDir)
-	if err := dockerRun(ctx, rootDir, name, "start"); err != nil {
+	go startExplorer(ctx, p)
+	if err := dockerRun(ctx, p.RootDir, p.Name, "start"); err != nil {
 		ui.Fatal("Failed to start the application: %v", err)
 	}
 }
