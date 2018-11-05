@@ -9,8 +9,9 @@ import (
 )
 
 var cliCmd = &cobra.Command{
-	Use:   "cli args ...",
-	Short: "Run a command from the application CLI",
+	Use:                "cli args ...",
+	Short:              "Run a command from the application CLI",
+	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		rootDir := getCwd(cmd)
 		name := filepath.Base(rootDir)
