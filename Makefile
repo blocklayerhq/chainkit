@@ -15,6 +15,11 @@ generate:
 # To install gometalinter on macOS:
 # brew tap alecthomas/homebrew-tap
 # brew install gometalinter
+.PHONY: setup
+setup:
+	go get -u github.com/alecthomas/gometalinter
+	gometalinter --install
+
 .PHONY: lint
 lint:
 	gometalinter \
