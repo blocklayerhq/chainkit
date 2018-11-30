@@ -36,7 +36,7 @@ func New(project *project.Project) *Builder {
 // Build executes a build.
 func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
 	ui.Info("Building %s", b.project.Name)
-	args := []string{"build", "-t", b.project.Name}
+	args := []string{"build", "-t", b.project.Image}
 	if opts.NoCache {
 		args = append(args, "--no-cache")
 	}

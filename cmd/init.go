@@ -48,7 +48,7 @@ func initialize(ctx context.Context, p *project.Project) error {
 	}
 
 	ui.Info("Generating configuration and gensis")
-	if err := dockerRun(ctx, p.RootDir, p.Name, "init"); err != nil {
+	if err := dockerRun(ctx, p.RootDir, p.Image, "init"); err != nil {
 		return err
 	}
 	if err := ui.Tree(path.Join(p.RootDir, "data"), nil); err != nil {

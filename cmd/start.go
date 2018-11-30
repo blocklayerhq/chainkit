@@ -101,7 +101,7 @@ func start(p *project.Project, join string) {
 	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize("http://localhost:8080/"))
 	defer cancel()
 	go startExplorer(ctx, p)
-	if err := dockerRun(ctx, p.RootDir, p.Name, "start"); err != nil {
+	if err := dockerRun(ctx, p.RootDir, p.Image, "start"); err != nil {
 		ui.Fatal("Failed to start the application: %v", err)
 	}
 }
