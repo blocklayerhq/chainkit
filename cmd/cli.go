@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"context"
-	"path/filepath"
 
+	"github.com/blocklayerhq/chainkit/pkg/project"
 	"github.com/blocklayerhq/chainkit/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -13,9 +13,11 @@ var cliCmd = &cobra.Command{
 	Short:              "Run a command from the application CLI",
 	DisableFlagParsing: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		rootDir := getCwd(cmd)
-		name := filepath.Base(rootDir)
-		cli(name, rootDir, args)
+		p, err := project.Load(getCwd(cmd))
+		if err != nil {
+			ui.Fatal("%v", err)
+		}
+		cli(p, args)
 	},
 }
 
@@ -25,16 +27,16 @@ func init() {
 	rootCmd.AddCommand(cliCmd)
 }
 
-func cli(name, rootDir string, args []string) {
+func cli(p *project.Project, args []string) {
 	ctx := context.Background()
 	cmd := []string{
 		"exec",
 		"-it",
-		name,
-		name + "cli",
+		p.Name,
+		p.Binaries.CLI,
 	}
 	cmd = append(cmd, args...)
-	if err := docker(ctx, rootDir, cmd...); err != nil {
+	if err := docker(ctx, p.RootDir, cmd...); err != nil {
 		ui.Fatal("Failed to start the cli (is the application running?): %v", err)
 	}
 }
