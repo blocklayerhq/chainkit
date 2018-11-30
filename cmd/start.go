@@ -3,11 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"path"
 
-	"github.com/blocklayerhq/chainkit/pkg/discovery"
-	"github.com/blocklayerhq/chainkit/pkg/project"
-	"github.com/blocklayerhq/chainkit/pkg/ui"
+	"github.com/blocklayerhq/chainkit/discovery"
+	"github.com/blocklayerhq/chainkit/project"
+	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -70,21 +71,28 @@ func start(p *project.Project, join string) {
 		ui.Verbose("IPFS Swarm announcing %s", addr)
 	}
 
+	genesisPath := path.Join(p.RootDir, "data", fmt.Sprintf("%sd", p.Name), "config", "genesis.json")
+
 	// Start a network.
 	if join == "" {
-		genesis := path.Join(p.RootDir, "data", fmt.Sprintf("%sd", p.Name), "config", "genesis.json")
-		chainID, err := s.Announce(ctx, genesis)
+		chainID, err := s.Announce(ctx, genesisPath)
 		if err != nil {
 			ui.Fatal("%v", err)
 		}
 		ui.Success("Network is live at: %v", chainID)
 	} else {
 		ui.Info("Joining network %s", join)
-		genesis, peerCh, err := s.Join(ctx, join)
+		genesisData, peerCh, err := s.Join(ctx, join)
 		if err != nil {
 			ui.Fatal("%v", err)
 		}
-		ui.Info("Genesis: %s", genesis)
+
+		ui.Success("Retrieved genesis data")
+
+		if err := ioutil.WriteFile(genesisPath, genesisData, 0644); err != nil {
+			ui.Fatal("Unable to write genesis file: %v", err)
+		}
+
 		peer := <-peerCh
 		ui.Info("Peer: %v", peer.Addrs)
 	}

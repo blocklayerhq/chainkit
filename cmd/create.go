@@ -11,11 +11,11 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/blocklayerhq/chainkit/pkg/builder"
-	"github.com/blocklayerhq/chainkit/pkg/httpfs"
-	"github.com/blocklayerhq/chainkit/pkg/project"
-	"github.com/blocklayerhq/chainkit/pkg/ui"
+	"github.com/blocklayerhq/chainkit/builder"
+	"github.com/blocklayerhq/chainkit/httpfs"
+	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/templates"
+	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

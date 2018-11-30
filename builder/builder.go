@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os/exec"
 
-	"github.com/blocklayerhq/chainkit/pkg/project"
-	"github.com/blocklayerhq/chainkit/pkg/ui"
+	"github.com/blocklayerhq/chainkit/project"
+	"github.com/blocklayerhq/chainkit/ui"
 )
 
 // Builder is a wrapper around `docker build` which provides a better UX.

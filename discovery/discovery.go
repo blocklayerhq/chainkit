@@ -11,7 +11,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/blocklayerhq/chainkit/pkg/ui"
+	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/ipsn/go-ipfs/core"
 	"github.com/ipsn/go-ipfs/core/coreapi"
 	iface "github.com/ipsn/go-ipfs/core/coreapi/interface"

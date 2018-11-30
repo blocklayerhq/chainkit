@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/blocklayerhq/chainkit/pkg/ui"
+	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )

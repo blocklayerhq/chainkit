@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/acarl005/stripansi"
-	"github.com/blocklayerhq/chainkit/pkg/ui"
+	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/schollz/progressbar"
 )
 

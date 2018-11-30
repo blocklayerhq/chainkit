@@ -3,9 +3,9 @@ package cmd
 import (
 	"context"
 
-	"github.com/blocklayerhq/chainkit/pkg/builder"
-	"github.com/blocklayerhq/chainkit/pkg/project"
-	"github.com/blocklayerhq/chainkit/pkg/ui"
+	"github.com/blocklayerhq/chainkit/builder"
+	"github.com/blocklayerhq/chainkit/project"
+	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/spf13/cobra"
 )
 
