@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"os"
-	"path"
 
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
@@ -35,7 +34,7 @@ func init() {
 }
 
 func initialize(ctx context.Context, p *project.Project) error {
-	_, err := os.Stat(path.Join(p.RootDir, "data"))
+	_, err := os.Stat(p.StateDir())
 
 	// Skip initialization if already initialized.
 	if err == nil {
@@ -48,10 +47,10 @@ func initialize(ctx context.Context, p *project.Project) error {
 	}
 
 	ui.Info("Generating configuration and gensis")
-	if err := dockerRun(ctx, p.RootDir, p.Image, "init"); err != nil {
+	if err := dockerRun(ctx, p, "init"); err != nil {
 		return err
 	}
-	if err := ui.Tree(path.Join(p.RootDir, "data"), nil); err != nil {
+	if err := ui.Tree(p.StateDir(), nil); err != nil {
 		return err
 	}
 

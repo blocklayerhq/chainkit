@@ -36,7 +36,7 @@ func cli(p *project.Project, args []string) {
 		p.Binaries.CLI,
 	}
 	cmd = append(cmd, args...)
-	if err := docker(ctx, p.RootDir, cmd...); err != nil {
+	if err := docker(ctx, p, cmd...); err != nil {
 		ui.Fatal("Failed to start the cli (is the application running?): %v", err)
 	}
 }

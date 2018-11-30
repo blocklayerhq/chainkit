@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/spf13/cobra"
 )
@@ -44,46 +45,38 @@ func goSrc() string {
 	return path.Join(goPath(), "src")
 }
 
-func dockerRun(ctx context.Context, rootDir, name string, args ...string) error {
-	dataDir := path.Join(rootDir, "data")
-
-	daemonName := name + "d"
-	cliName := name + "cli"
-
-	// -v "${data_dir}/${APP_NAME}d:/root/.${APP_NAME}d"
-	daemonDir := path.Join(dataDir, daemonName)
-	daemonDirContainer := path.Join("/", "root", "."+daemonName)
-
-	// -v "${data_dir}/${APP_NAME}cli:/root/.${APP_NAME}cli"
-	cliDir := path.Join(dataDir, cliName)
-	cliDirContainer := path.Join("/", "root", "."+cliName)
+func dockerRun(ctx context.Context, p *project.Project, args ...string) error {
+	var (
+		daemonDirContainer = path.Join("/", "root", "."+p.Binaries.Daemon)
+		cliDirContainer    = path.Join("/", "root", "."+p.Binaries.CLI)
+	)
 
 	cmd := []string{
 		"run", "--rm",
 		"-p", "26656:26656",
 		"-p", "26657:26657",
-		"-v", daemonDir + ":" + daemonDirContainer,
-		"-v", cliDir + ":" + cliDirContainer,
-		"--name", name,
-		name + ":latest",
-		daemonName,
+		"-v", p.StateDir() + ":" + daemonDirContainer,
+		"-v", p.CLIDir() + ":" + cliDirContainer,
+		"--name", p.Image,
+		p.Image + ":latest",
+		p.Binaries.Daemon,
 	}
 	cmd = append(cmd, args...)
 
-	return docker(ctx, rootDir, cmd...)
+	return docker(ctx, p, cmd...)
 }
 
-func docker(ctx context.Context, rootDir string, args ...string) error {
-	return run(ctx, rootDir, "docker", args...)
+func docker(ctx context.Context, p *project.Project, args ...string) error {
+	return run(ctx, p, "docker", args...)
 }
 
-func run(ctx context.Context, rootDir, command string, args ...string) error {
+func run(ctx context.Context, p *project.Project, command string, args ...string) error {
 	ui.Verbose("$ %s %s", command, strings.Join(args, " "))
 	cmd := exec.CommandContext(ctx, command)
 	cmd.Args = append([]string{command}, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Dir = rootDir
+	cmd.Dir = p.RootDir
 	return cmd.Run()
 }

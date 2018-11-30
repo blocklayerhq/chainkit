@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
-	"path"
 
 	"github.com/blocklayerhq/chainkit/discovery"
 	"github.com/blocklayerhq/chainkit/project"
@@ -42,7 +40,7 @@ func startExplorer(ctx context.Context, p *project.Project) {
 		"-p", "8080:8080",
 		"samalba/cosmos-explorer-localdev:latest",
 	}
-	if err := docker(ctx, p.RootDir, cmd...); err != nil {
+	if err := docker(ctx, p, cmd...); err != nil {
 		ui.Fatal("Failed to start the Explorer: %v", err)
 	}
 }
@@ -56,8 +54,7 @@ func start(p *project.Project, join string) {
 		ui.Fatal("Initialization failed: %v", err)
 	}
 
-	ipfsRoot := path.Join(p.RootDir, "data", fmt.Sprintf("%sd", p.Name), "ipfs")
-	s := discovery.New(ipfsRoot)
+	s := discovery.New(p.IPFSDir())
 	if err := s.Start(ctx); err != nil {
 		ui.Fatal("%v", err)
 	}
@@ -71,11 +68,9 @@ func start(p *project.Project, join string) {
 		ui.Verbose("IPFS Swarm announcing %s", addr)
 	}
 
-	genesisPath := path.Join(p.RootDir, "data", fmt.Sprintf("%sd", p.Name), "config", "genesis.json")
-
 	// Start a network.
 	if join == "" {
-		chainID, err := s.Announce(ctx, genesisPath)
+		chainID, err := s.Announce(ctx, p.GenesisPath())
 		if err != nil {
 			ui.Fatal("%v", err)
 		}
@@ -89,7 +84,7 @@ func start(p *project.Project, join string) {
 
 		ui.Success("Retrieved genesis data")
 
-		if err := ioutil.WriteFile(genesisPath, genesisData, 0644); err != nil {
+		if err := ioutil.WriteFile(p.GenesisPath(), genesisData, 0644); err != nil {
 			ui.Fatal("Unable to write genesis file: %v", err)
 		}
 
@@ -101,7 +96,7 @@ func start(p *project.Project, join string) {
 	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize("http://localhost:8080/"))
 	defer cancel()
 	go startExplorer(ctx, p)
-	if err := dockerRun(ctx, p.RootDir, p.Image, "start"); err != nil {
+	if err := dockerRun(ctx, p, "start"); err != nil {
 		ui.Fatal("Failed to start the application: %v", err)
 	}
 }

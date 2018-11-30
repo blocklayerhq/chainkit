@@ -10,6 +10,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// ChainkitManifest defines the name of the manifest file
+const ChainkitManifest = "chainkit.yml"
+
 type projectBinaries struct {
 	CLI    string
 	Daemon string
@@ -22,9 +25,6 @@ type Project struct {
 	Binaries *projectBinaries
 	Image    string
 }
-
-// ChainkitManifest defines the name of the manifest file
-const ChainkitManifest = "chainkit.yml"
 
 // New will create a new project in the given directory.
 func New(dir, name string) *Project {
@@ -76,6 +76,7 @@ func (p *Project) Validate() error {
 	return nil
 }
 
+// SetDefaults sets the project default values.
 func (p *Project) SetDefaults() {
 	switch {
 	case p.Image == "":
@@ -103,4 +104,34 @@ func Load(dir string) (*Project, error) {
 	p.SetDefaults()
 
 	return p, nil
+}
+
+// StateDir returns the state directory within the project.
+func (p *Project) StateDir() string {
+	return path.Join(p.RootDir, "state")
+}
+
+// DataDir returns the data directory within the project state.
+func (p *Project) DataDir() string {
+	return path.Join(p.StateDir(), "data")
+}
+
+// ConfigDir returns the config directory within the project state.
+func (p *Project) ConfigDir() string {
+	return path.Join(p.StateDir(), "config")
+}
+
+// GenesisPath returns the genesis path for the project.
+func (p *Project) GenesisPath() string {
+	return path.Join(p.ConfigDir(), "genesis.json")
+}
+
+// CLIDir returns the CLI directory within the project state.
+func (p *Project) CLIDir() string {
+	return path.Join(p.StateDir(), "cli")
+}
+
+// IPFSDir returns the IPFS data directory within the project state.
+func (p *Project) IPFSDir() string {
+	return path.Join(p.StateDir(), "ipfs")
 }
