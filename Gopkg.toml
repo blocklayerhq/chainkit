@@ -59,3 +59,11 @@
 [[constraint]]
   branch = "master"
   name = "github.com/mitchellh/colorstring"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ipsn/go-ipfs"
+
+[[override]]
+  branch = "master"
+  name = "github.com/dgraph-io/badger"
