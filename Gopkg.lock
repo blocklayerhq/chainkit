@@ -42,18 +42,6 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4cf11742b199ab3aacf26b00187e72f7ff8ba2145f363b74f295d54f098f79e4"
-  name = "github.com/agl/ed25519"
-  packages = [
-    ".",
-    "edwards25519",
-    "extra25519",
-  ]
-  pruneopts = "UT"
-  revision = "5312a61534124124185d41f09206b9fef1d88403"
-
-[[projects]]
-  branch = "master"
   digest = "1:1779bbb6256073e58fa31c8989a96775062336b7c37e55b27cc9c8f0890995bb"
   name = "github.com/bifurcation/mint"
   packages = [
@@ -538,33 +526,6 @@
   revision = "aac704a3f4f27190b4ccc05f303a4931fd1241ff"
 
 [[projects]]
-  digest = "1:4ff86c6d6dd8df23a58e6b6060fea5f150d1a502cdfe8a3e9efd5d25339196c6"
-  name = "github.com/libp2p/go-libp2p-crypto"
-  packages = [
-    ".",
-    "pb",
-  ]
-  pruneopts = "UT"
-  revision = "274de1bb6c27780863df6b230c91324ab481dab2"
-  version = "v2.0.1"
-
-[[projects]]
-  digest = "1:d59d3f32a53e3d1ef4f19f92c8f4cbccabfae6c965760577958b2fb937fede98"
-  name = "github.com/libp2p/go-libp2p-peer"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "dd9b45c0649b38aebe65f98cb460676b4214a42c"
-  version = "v2.4.0"
-
-[[projects]]
-  digest = "1:66c0ae83a18e393a2b6ae7c56d848380e29b3f40ca2e0ba4442e7f3c227573ea"
-  name = "github.com/libp2p/go-libp2p-peerstore"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "6295e61c9fd2f13ad159c6241be3b371918045e2"
-  version = "v2.0.6"
-
-[[projects]]
   branch = "master"
   digest = "1:6fe6fc7707d8c37fb305362a324462d898bc1c01eaa2bfe15383ec21f6540c71"
   name = "github.com/lucas-clemente/aes12"
@@ -662,22 +623,6 @@
   pruneopts = "UT"
   revision = "89529c6904fcd077434931b4eac8b4b2f0991baf"
   version = "v1.1.0"
-
-[[projects]]
-  digest = "1:e54be212eca970f4d5d39899666aef429c437969783e360a0cab075ba1423a80"
-  name = "github.com/multiformats/go-multiaddr"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2b4e098f3e0aa2c8bc960f0e4bdc3247efc3749c"
-  version = "v1.3.0"
-
-[[projects]]
-  digest = "1:c0ea71365e7d0e63a2e8f48e6fc2ba92f2f2b739bbeb3cdabdcd719037e175c2"
-  name = "github.com/multiformats/go-multihash"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "8be2a682ab9f254311de1375145a2f78a809b07d"
-  version = "v1.0.8"
 
 [[projects]]
   digest = "1:450b7623b185031f3a456801155c8320209f75d0d4c4e633c6b1e59d44d6e392"
@@ -893,6 +838,14 @@
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
+[[projects]]
+  digest = "1:4d2e5a73dc1500038e504a8d78b986630e3626dc027bc030ba5c75da257cdb96"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
+  version = "v2.2.2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -901,13 +854,14 @@
     "github.com/ipsn/go-ipfs/core",
     "github.com/ipsn/go-ipfs/core/coreapi",
     "github.com/ipsn/go-ipfs/core/coreapi/interface",
+    "github.com/ipsn/go-ipfs/gxlibs/github.com/ipfs/go-cid",
     "github.com/ipsn/go-ipfs/gxlibs/github.com/ipfs/go-ipfs-addr",
     "github.com/ipsn/go-ipfs/gxlibs/github.com/ipfs/go-ipfs-config",
     "github.com/ipsn/go-ipfs/gxlibs/github.com/ipfs/go-ipfs-files",
     "github.com/ipsn/go-ipfs/gxlibs/github.com/libp2p/go-libp2p-kad-dht",
+    "github.com/ipsn/go-ipfs/gxlibs/github.com/libp2p/go-libp2p-peerstore",
     "github.com/ipsn/go-ipfs/plugin/loader",
     "github.com/ipsn/go-ipfs/repo/fsrepo",
-    "github.com/libp2p/go-libp2p-peerstore",
     "github.com/mitchellh/colorstring",
     "github.com/pkg/errors",
     "github.com/schollz/progressbar",
@@ -916,6 +870,7 @@
     "github.com/tj/go-spin",
     "github.com/xlab/treeprint",
     "golang.org/x/crypto/ssh/terminal",
+    "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
