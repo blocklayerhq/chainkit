@@ -32,11 +32,7 @@ var createCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		p, err := project.Create(getCwd(cmd), name)
-		if err != nil {
-			ui.Fatal("%v", err)
-		}
-
+		p := project.New(getCwd(cmd), name)
 		create(p)
 	},
 }
@@ -107,7 +103,7 @@ func scaffold(p *project.Project) error {
 		GoPkg:   strings.TrimPrefix(p.RootDir, gosource+"/"),
 	}
 
-	if err := extractFiles(ctx, p.RootDir); err != nil {
+	if err := extractFiles(ctx, p); err != nil {
 		return err
 	}
 	if err := ui.Tree(p.RootDir, []string{"k8s"}); err != nil {
@@ -117,26 +113,32 @@ func scaffold(p *project.Project) error {
 	return nil
 }
 
-func extractFiles(ctx *templateContext, dest string) error {
+func extractFiles(ctx *templateContext, p *project.Project) error {
 	err := httpfs.Walk(templates.Assets, "/", func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		return extractFile(ctx, path, dest, fi)
+		return extractFile(ctx, path, p, fi)
 	})
 	return err
 }
 
-func extractFile(ctx *templateContext, src, dst string, fi os.FileInfo) error {
+func extractFile(ctx *templateContext, src string, p *project.Project, fi os.FileInfo) error {
 	// Templatize the file name.
 	parsedSrc, err := templatize(ctx, src, src)
 	if err != nil {
 		return err
 	}
 
-	dstPath := path.Join(dst, string(parsedSrc))
+	dstPath := path.Join(p.RootDir, string(parsedSrc))
 	if fi.IsDir() {
 		return os.MkdirAll(dstPath, fi.Mode())
+	}
+
+	// Save the project manifest on disk
+	if err := p.Save(); err != nil {
+		errMsg := fmt.Sprintf("Cannot create \"%s\"", project.ChainkitManifest)
+		return errors.Wrap(err, errMsg)
 	}
 
 	data, err := httpfs.ReadFile(templates.Assets, src)
