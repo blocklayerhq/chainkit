@@ -48,8 +48,17 @@ func initialize(ctx context.Context, p *project.Project) error {
 
 	ui.Info("Generating configuration and genesis files")
 	if err := dockerRun(ctx, p, "init"); err != nil {
-		return err
+		//NOTE: some cosmos app (e.g. Gaia) take a --moniker option in the init command
+		// if the normal init fail, rerun with `--moniker $(hostname)`
+		hostname, err := os.Hostname()
+		if err != nil {
+			return err
+		}
+		if err := dockerRun(ctx, p, "init", "--moniker", hostname); err != nil {
+			return err
+		}
 	}
+
 	if err := ui.Tree(p.StateDir(), nil); err != nil {
 		return err
 	}
