@@ -46,7 +46,7 @@ func initialize(ctx context.Context, p *project.Project) error {
 		return err
 	}
 
-	ui.Info("Generating configuration and gensis")
+	ui.Info("Generating configuration and genesis files")
 	if err := dockerRun(ctx, p, "init"); err != nil {
 		return err
 	}
