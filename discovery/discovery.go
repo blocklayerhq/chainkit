@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -43,15 +42,17 @@ var (
 // Server is the discovery server
 type Server struct {
 	root string
+	port int
 	node *core.IpfsNode
 	api  iface.CoreAPI
 	dht  *dht.IpfsDHT
 }
 
 // New returns a new discovery server
-func New(root string) *Server {
+func New(root string, port int) *Server {
 	return &Server{
 		root: root,
+		port: port,
 	}
 }
 
@@ -81,6 +82,14 @@ func (s *Server) Start(ctx context.Context) error {
 		return err
 	}
 
+	err = repo.SetConfigKey("Addresses.Swarm", []string{
+		fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", s.port),
+		fmt.Sprintf("/ip6/::/tcp/%d", s.port),
+	})
+	if err != nil {
+		return err
+	}
+
 	s.node, err = core.NewNode(ctx, &core.BuildCfg{
 		Online: true,
 		Repo:   repo,
@@ -102,14 +111,6 @@ func (s *Server) ipfsInit() error {
 	conf, err := config.Init(os.Stdout, nBitsForKeypairDefault)
 	if err != nil {
 		return err
-	}
-	port, err := getFreePort()
-	if err != nil {
-		return err
-	}
-	conf.Addresses.Swarm = []string{
-		fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", port),
-		fmt.Sprintf("/ip6/::/tcp/%d", port),
 	}
 	conf.Addresses.API = []string{}
 	conf.Addresses.Gateway = []string{}
@@ -230,14 +231,4 @@ func (s *Server) searchPeers(ctx context.Context, id cid.Cid) <-chan pstore.Peer
 	}()
 
 	return ch
-}
-
-func getFreePort() (int, error) {
-	l, err := net.Listen("tcp", ":0")
-	if err != nil {
-		return 0, err
-	}
-	defer l.Close()
-
-	return l.Addr().(*net.TCPAddr).Port, nil
 }

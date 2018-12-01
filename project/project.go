@@ -10,10 +10,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// ChainkitManifest defines the name of the manifest file
-const ChainkitManifest = "chainkit.yml"
+const manifestFile = "chainkit.yml"
 
-type projectBinaries struct {
+type binaries struct {
 	CLI    string
 	Daemon string
 }
@@ -22,15 +21,16 @@ type projectBinaries struct {
 type Project struct {
 	Name     string
 	RootDir  string `yaml:"-"`
-	Binaries *projectBinaries
+	Binaries *binaries
 	Image    string
+	Ports    *PortMapper `yaml:"-"`
 }
 
 // New will create a new project in the given directory.
 func New(dir, name string) *Project {
 	p := &Project{
 		Name: name,
-		Binaries: &projectBinaries{
+		Binaries: &binaries{
 			CLI:    name + "cli",
 			Daemon: name + "d",
 		},
@@ -46,7 +46,7 @@ func (p *Project) Save() error {
 	if err != nil {
 		return err
 	}
-	fp, err := os.Create(path.Join(p.RootDir, ChainkitManifest))
+	fp, err := os.Create(path.Join(p.RootDir, manifestFile))
 	if err != nil {
 		return err
 	}
@@ -86,8 +86,8 @@ func (p *Project) SetDefaults() {
 
 // Load will load a project from a given directory
 func Load(dir string) (*Project, error) {
-	errMsg := fmt.Sprintf("Cannot read manifest %q", ChainkitManifest)
-	data, err := ioutil.ReadFile(path.Join(dir, ChainkitManifest))
+	errMsg := fmt.Sprintf("Cannot read manifest %q", manifestFile)
+	data, err := ioutil.ReadFile(path.Join(dir, manifestFile))
 	if err != nil {
 		return nil, errors.Wrap(err, errMsg)
 	}
@@ -98,7 +98,12 @@ func Load(dir string) (*Project, error) {
 	p.RootDir = dir
 
 	if err := p.Validate(); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("%s validation", ChainkitManifest))
+		return nil, errors.Wrap(err, fmt.Sprintf("%s validation", manifestFile))
+	}
+
+	p.Ports, err = AllocatePorts()
+	if err != nil {
+		return nil, err
 	}
 
 	p.SetDefaults()

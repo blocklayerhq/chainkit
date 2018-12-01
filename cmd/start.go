@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 
 	"github.com/blocklayerhq/chainkit/discovery"
@@ -37,7 +38,7 @@ func init() {
 func startExplorer(ctx context.Context, p *project.Project) {
 	cmd := []string{
 		"run", "--rm",
-		"-p", "8080:8080",
+		"-p", fmt.Sprintf("%d:8080", p.Ports.Explorer),
 		"samalba/cosmos-explorer-localdev:latest",
 	}
 	if err := docker(ctx, p, cmd...); err != nil {
@@ -54,7 +55,7 @@ func start(p *project.Project, join string) {
 		ui.Fatal("Initialization failed: %v", err)
 	}
 
-	s := discovery.New(p.IPFSDir())
+	s := discovery.New(p.IPFSDir(), p.Ports.IPFS)
 	if err := s.Start(ctx); err != nil {
 		ui.Fatal("%v", err)
 	}
@@ -92,8 +93,8 @@ func start(p *project.Project, join string) {
 		ui.Info("Peer: %v", peer.Addrs)
 	}
 
-	ui.Success("Application is live at:     %s", ui.Emphasize("http://localhost:26657/"))
-	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize("http://localhost:8080/"))
+	ui.Success("Application is live at:     %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", p.Ports.TendermintRPC)))
+	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", p.Ports.Explorer)))
 	defer cancel()
 	go startExplorer(ctx, p)
 	if err := dockerRun(ctx, p, "start"); err != nil {

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -53,8 +54,8 @@ func dockerRun(ctx context.Context, p *project.Project, args ...string) error {
 
 	cmd := []string{
 		"run", "--rm",
-		"-p", "26656:26656",
-		"-p", "26657:26657",
+		"-p", fmt.Sprintf("%d:26656", p.Ports.TendermintP2P),
+		"-p", fmt.Sprintf("%d:26657", p.Ports.TendermintRPC),
 		"-v", p.StateDir() + ":" + daemonDirContainer,
 		"-v", p.CLIDir() + ":" + cliDirContainer,
 		"--name", p.Image,

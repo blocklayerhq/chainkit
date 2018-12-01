@@ -137,8 +137,7 @@ func extractFile(ctx *templateContext, src string, p *project.Project, fi os.Fil
 
 	// Save the project manifest on disk
 	if err := p.Save(); err != nil {
-		errMsg := fmt.Sprintf("Cannot create \"%s\"", project.ChainkitManifest)
-		return errors.Wrap(err, errMsg)
+		return errors.Wrap(err, "Failed to create chainkit.yml")
 	}
 
 	data, err := httpfs.ReadFile(templates.Assets, src)
