@@ -11,6 +11,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ExplorerImage defines the container image to pull for running the Cosmos Explorer
+const ExplorerImage = "samalba/cosmos-explorer-localdev:20181204"
+
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the application",
@@ -39,7 +42,7 @@ func startExplorer(ctx context.Context, p *project.Project) {
 	cmd := []string{
 		"run", "--rm",
 		"-p", fmt.Sprintf("%d:8080", p.Ports.Explorer),
-		"samalba/cosmos-explorer-localdev:latest",
+		ExplorerImage,
 	}
 	if err := docker(ctx, p, cmd...); err != nil {
 		ui.Fatal("Failed to start the Explorer: %v", err)
@@ -94,7 +97,7 @@ func start(p *project.Project, join string) {
 	}
 
 	ui.Success("Application is live at:     %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", p.Ports.TendermintRPC)))
-	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", p.Ports.Explorer)))
+	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", p.Ports.Explorer, p.Ports.TendermintRPC)))
 	defer cancel()
 	go startExplorer(ctx, p)
 	if err := dockerRun(ctx, p, "start"); err != nil {
