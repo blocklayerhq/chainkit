@@ -26,3 +26,7 @@ lint:
 		--vendor --tests --disable-all \
 		--exclude templates/src/ \
 		-E gofmt -E vet -E goimports -E golint ./...
+
+.PHONY: test
+test:
+	go test -v ./...
