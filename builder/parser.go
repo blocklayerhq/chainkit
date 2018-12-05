@@ -28,7 +28,10 @@ func (p *Parser) Parse(r io.Reader, opts BuildOpts) error {
 		p.processLine(text, opts)
 	}
 
-	return scanner.Err()
+	//FIXME: on Linux, the scanner returns an error on success:
+	// -> read |0: file already closed
+	//return scanner.Err()
+	return nil
 }
 
 func (p *Parser) processLine(text string, opts BuildOpts) {
