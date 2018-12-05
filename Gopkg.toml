@@ -71,3 +71,7 @@
 [[override]]
   name = "github.com/tendermint/tendermint"
   version = "=0.25.0"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/sync"
