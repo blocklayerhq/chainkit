@@ -82,7 +82,7 @@ func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
 		return err
 	}
 
-	ui.Success("Build successfull")
+	ui.Success("Build successful")
 	return nil
 }
 
