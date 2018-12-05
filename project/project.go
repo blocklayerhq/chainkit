@@ -116,6 +116,11 @@ func (p *Project) StateDir() string {
 	return path.Join(p.RootDir, "state")
 }
 
+// LogFile returns the log file path
+func (p *Project) LogFile() string {
+	return path.Join(p.StateDir(), "log")
+}
+
 // DataDir returns the data directory within the project state.
 func (p *Project) DataDir() string {
 	return path.Join(p.StateDir(), "data")

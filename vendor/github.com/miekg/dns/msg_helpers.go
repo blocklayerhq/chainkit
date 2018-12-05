@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"net"
+	"strconv"
 	"strings"
 )
 
@@ -275,7 +276,13 @@ func unpackString(msg []byte, off int) (string, int, error) {
 			s.WriteByte('\\')
 			s.WriteByte(b)
 		case b < ' ' || b > '~': // unprintable
-			writeEscapedByte(&s, b)
+			var buf [3]byte
+			bufs := strconv.AppendInt(buf[:0], int64(b), 10)
+			s.WriteByte('\\')
+			for i := len(bufs); i < 3; i++ {
+				s.WriteByte('0')
+			}
+			s.Write(bufs)
 		default:
 			s.WriteByte(b)
 		}

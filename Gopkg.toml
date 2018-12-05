@@ -67,3 +67,7 @@
 [[override]]
   branch = "master"
   name = "github.com/dgraph-io/badger"
+
+[[override]]
+  name = "github.com/tendermint/tendermint"
+  version = "=0.25.0"

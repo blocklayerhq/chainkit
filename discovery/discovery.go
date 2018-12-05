@@ -2,12 +2,15 @@ package discovery
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/blocklayerhq/chainkit/ui"
@@ -19,7 +22,9 @@ import (
 	config "github.com/ipsn/go-ipfs/gxlibs/github.com/ipfs/go-ipfs-config"
 	"github.com/ipsn/go-ipfs/gxlibs/github.com/ipfs/go-ipfs-files"
 	"github.com/ipsn/go-ipfs/gxlibs/github.com/libp2p/go-libp2p-kad-dht"
+	net "github.com/ipsn/go-ipfs/gxlibs/github.com/libp2p/go-libp2p-net"
 	pstore "github.com/ipsn/go-ipfs/gxlibs/github.com/libp2p/go-libp2p-peerstore"
+	"github.com/ipsn/go-ipfs/gxlibs/github.com/multiformats/go-multiaddr"
 	"github.com/ipsn/go-ipfs/plugin/loader"
 	"github.com/ipsn/go-ipfs/repo/fsrepo"
 )
@@ -103,6 +108,7 @@ func (s *Server) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	s.dhtConnect(ctx)
 
 	return nil
 }
@@ -148,13 +154,26 @@ func (s *Server) AnnounceAddresses() []string {
 	return addrs
 }
 
-// Announce broadcasts chain information. Returns the chain ID.
-func (s *Server) Announce(ctx context.Context, genesisPath string) (string, error) {
-	st, err := os.Stat(genesisPath)
+// Publish publishes chain information. Returns the chain ID.
+func (s *Server) Publish(ctx context.Context, genesisPath, imagePath string) (string, error) {
+	sandbox, err := ioutil.TempDir(os.TempDir(), "chainkit-network")
 	if err != nil {
 		return "", err
 	}
-	f, err := files.NewSerialFile("genesis.json", genesisPath, false, st)
+
+	st, err := os.Stat(sandbox)
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.Link(genesisPath, path.Join(sandbox, "genesis.json")); err != nil {
+		return "", err
+	}
+	if err := os.Link(imagePath, path.Join(sandbox, "image.tgz")); err != nil {
+		return "", err
+	}
+
+	f, err := files.NewSerialFile("network", sandbox, false, st)
 	if err != nil {
 		return "", err
 	}
@@ -164,71 +183,135 @@ func (s *Server) Announce(ctx context.Context, genesisPath string) (string, erro
 		return "", err
 	}
 
-	go s.broadcast(ctx, p.Cid())
-
 	return p.String(), nil
 }
 
+// Announce announces our presence as a network node.
+func (s *Server) Announce(ctx context.Context, chainID string, peer *PeerInfo) error {
+	id, err := cid.Decode(filepath.Base(chainID))
+	if err != nil {
+		return err
+	}
+
+	s.node.PeerHost.SetStreamHandler("/chainkit/0.1.0", func(stream net.Stream) {
+		defer stream.Close()
+		enc := json.NewEncoder(stream)
+		if err := enc.Encode(peer); err != nil {
+			ui.Error("failed to encode: %v", err)
+			return
+		}
+	})
+
+	cctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	if err := s.dht.Provide(cctx, id, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Server) dhtConnect(ctx context.Context) {
-	for _, peerAddr := range bootstrapPeers {
+	connect := func(peerAddr string) error {
 		addr, _ := iaddr.ParseString(peerAddr)
 		peerinfo, _ := pstore.InfoFromP2pAddr(addr.Multiaddr())
 
 		err := s.node.PeerHost.Connect(ctx, *peerinfo)
 		if err != nil {
 			ui.Error("%v", err)
-			continue
+			return err
 		}
 		ui.Verbose("Connection established with bootstrap node: %v", *peerinfo)
+		return nil
 	}
-}
 
-func (s *Server) broadcast(ctx context.Context, chainID cid.Cid) error {
-	s.dhtConnect(ctx)
-	return s.dht.Provide(ctx, chainID, true)
+	wg := sync.WaitGroup{}
+	for _, peerAddr := range bootstrapPeers {
+		wg.Add(1)
+		go func(peerAddr string) {
+			defer wg.Done()
+			connect(peerAddr)
+		}(peerAddr)
+	}
+	wg.Wait()
 }
 
 // Join joins a network.
-func (s *Server) Join(ctx context.Context, chainID string) ([]byte, <-chan pstore.PeerInfo, error) {
-	id, err := cid.Decode(filepath.Base(chainID))
+func (s *Server) Join(ctx context.Context, chainID string) (io.ReadCloser, io.ReadCloser, error) {
+	genesisPath, err := iface.ParsePath(path.Join(chainID, "genesis.json"))
+	if err != nil {
+		return nil, nil, err
+	}
+	genesisFile, err := s.api.Unixfs().Get(ctx, genesisPath)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	fpath, err := iface.ParsePath(chainID)
+	imagePath, err := iface.ParsePath(path.Join(chainID, "image.tgz"))
+	imageFile, err := s.api.Unixfs().Get(ctx, imagePath)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	file, err := s.api.Unixfs().Get(ctx, fpath)
-	if err != nil {
-		return nil, nil, err
-	}
+	// genesis, err := ioutil.ReadAll(file)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	genesis, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return genesis, s.searchPeers(ctx, id), nil
+	return genesisFile, imageFile, nil
 }
 
-func (s *Server) searchPeers(ctx context.Context, id cid.Cid) <-chan pstore.PeerInfo {
-	s.dhtConnect(ctx)
+// PeerInfo contains information about one peer.
+type PeerInfo struct {
+	NodeID            string   `json:"node_id"`
+	IP                []string `json:"ips"`
+	TendermintP2PPort int      `json:"tendermint_p2p_port"`
+}
 
-	ch := make(chan pstore.PeerInfo)
+// SearchPeers looks for peers in the network
+func (s *Server) SearchPeers(ctx context.Context, chainID string) (<-chan *PeerInfo, error) {
+	id, err := cid.Decode(filepath.Base(chainID))
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan *PeerInfo)
 	go func() {
-		tctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+		tctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 
 		defer cancel()
 		defer close(ch)
 
-		for p := range s.dht.FindProvidersAsync(tctx, id, 10) {
+		peers := s.dht.FindProvidersAsync(tctx, id, 10)
+		for p := range peers {
 			if p.ID != s.node.PeerHost.ID() && len(p.Addrs) > 0 {
-				ch <- p
+				stream, err := s.node.PeerHost.NewStream(ctx, p.ID, "/chainkit/0.1.0")
+				if err != nil {
+					ui.Error("unable to make stream: %v", err)
+					continue
+				}
+				dec := json.NewDecoder(stream)
+				peer := &PeerInfo{}
+				if err := dec.Decode(peer); err != nil {
+					ui.Error("failed to decode: %v", err)
+					continue
+				}
+
+				if peer.IP == nil {
+					peer.IP = []string{}
+				}
+				for _, addr := range p.Addrs {
+					v, err := addr.ValueForProtocol(multiaddr.P_IP4)
+					if err != nil || v == "" {
+						continue
+					}
+
+					peer.IP = append(peer.IP, v)
+				}
+
+				ch <- peer
 			}
 		}
 	}()
 
-	return ch
+	return ch, nil
 }

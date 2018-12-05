@@ -3,11 +3,14 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
@@ -72,12 +75,40 @@ func docker(ctx context.Context, p *project.Project, args ...string) error {
 }
 
 func run(ctx context.Context, p *project.Project, command string, args ...string) error {
+	return runWithFD(ctx, p, os.Stdin, os.Stdout, os.Stderr, command, args...)
+}
+
+func runWithFD(ctx context.Context, p *project.Project, stdin io.Reader, stdout, stderr io.Writer, command string, args ...string) error {
 	ui.Verbose("$ %s %s", command, strings.Join(args, " "))
-	cmd := exec.CommandContext(ctx, command)
+	cmd := exec.Command(command)
 	cmd.Args = append([]string{command}, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdin = stdin
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	cmd.Dir = p.RootDir
-	return cmd.Run()
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	// We don't use exec.CommandContext here because it will
+	// SIGKILL the process. Instead, we handle the context
+	// on our own and try to gracefully shutdown the command.
+	waitDone := make(chan struct{})
+	go func() {
+		select {
+		case <-ctx.Done():
+			cmd.Process.Signal(syscall.SIGTERM)
+			select {
+			case <-time.After(5 * time.Second):
+				cmd.Process.Kill()
+			case <-waitDone:
+			}
+		case <-waitDone:
+		}
+	}()
+
+	err := cmd.Wait()
+	close(waitDone)
+	return err
 }

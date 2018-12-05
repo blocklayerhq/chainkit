@@ -82,7 +82,6 @@ type ConnectionStater interface {
 
 type response struct {
 	msg            []byte
-	closed         bool // connection has been closed
 	hijacked       bool // connection has been hijacked by handler
 	tsigTimersOnly bool
 	tsigStatus     error
@@ -417,12 +416,13 @@ func (srv *Server) Shutdown() error {
 // to terminate.
 func (srv *Server) ShutdownContext(ctx context.Context) error {
 	srv.lock.Lock()
-	if !srv.started {
-		srv.lock.Unlock()
+	started := srv.started
+	srv.started = false
+	srv.lock.Unlock()
+
+	if !started {
 		return &Error{err: "server not started"}
 	}
-
-	srv.started = false
 
 	if srv.PacketConn != nil {
 		srv.PacketConn.SetReadDeadline(aLongTimeAgo) // Unblock reads
@@ -432,10 +432,10 @@ func (srv *Server) ShutdownContext(ctx context.Context) error {
 		srv.Listener.Close()
 	}
 
+	srv.lock.Lock()
 	for rw := range srv.conns {
 		rw.SetReadDeadline(aLongTimeAgo) // Unblock reads
 	}
-
 	srv.lock.Unlock()
 
 	if testShutdownNotify != nil {
@@ -666,16 +666,7 @@ func (srv *Server) serveDNS(w *response) {
 }
 
 func (srv *Server) readTCP(conn net.Conn, timeout time.Duration) ([]byte, error) {
-	// If we race with ShutdownContext, the read deadline may
-	// have been set in the distant past to unblock the read
-	// below. We must not override it, otherwise we may block
-	// ShutdownContext.
-	srv.lock.RLock()
-	if srv.started {
-		conn.SetReadDeadline(time.Now().Add(timeout))
-	}
-	srv.lock.RUnlock()
-
+	conn.SetReadDeadline(time.Now().Add(timeout))
 	l := make([]byte, 2)
 	n, err := conn.Read(l)
 	if err != nil || n != 2 {
@@ -710,13 +701,7 @@ func (srv *Server) readTCP(conn net.Conn, timeout time.Duration) ([]byte, error)
 }
 
 func (srv *Server) readUDP(conn *net.UDPConn, timeout time.Duration) ([]byte, *SessionUDP, error) {
-	srv.lock.RLock()
-	if srv.started {
-		// See the comment in readTCP above.
-		conn.SetReadDeadline(time.Now().Add(timeout))
-	}
-	srv.lock.RUnlock()
-
+	conn.SetReadDeadline(time.Now().Add(timeout))
 	m := srv.udpPool.Get().([]byte)
 	n, s, err := ReadFromSessionUDP(conn, m)
 	if err != nil {
@@ -729,10 +714,6 @@ func (srv *Server) readUDP(conn *net.UDPConn, timeout time.Duration) ([]byte, *S
 
 // WriteMsg implements the ResponseWriter.WriteMsg method.
 func (w *response) WriteMsg(m *Msg) (err error) {
-	if w.closed {
-		return &Error{err: "WriteMsg called after Close"}
-	}
-
 	var data []byte
 	if w.tsigSecret != nil { // if no secrets, dont check for the tsig (which is a longer check)
 		if t := m.IsTsig(); t != nil {
@@ -754,10 +735,6 @@ func (w *response) WriteMsg(m *Msg) (err error) {
 
 // Write implements the ResponseWriter.Write method.
 func (w *response) Write(m []byte) (int, error) {
-	if w.closed {
-		return 0, &Error{err: "Write called after Close"}
-	}
-
 	switch {
 	case w.udp != nil:
 		n, err := WriteToSessionUDP(w.udp, m, w.udpSession)
@@ -776,33 +753,24 @@ func (w *response) Write(m []byte) (int, error) {
 
 		n, err := io.Copy(w.tcp, bytes.NewReader(m))
 		return int(n), err
-	default:
-		panic("dns: internal error: udp and tcp both nil")
 	}
+	panic("not reached")
 }
 
 // LocalAddr implements the ResponseWriter.LocalAddr method.
 func (w *response) LocalAddr() net.Addr {
-	switch {
-	case w.udp != nil:
-		return w.udp.LocalAddr()
-	case w.tcp != nil:
+	if w.tcp != nil {
 		return w.tcp.LocalAddr()
-	default:
-		panic("dns: internal error: udp and tcp both nil")
 	}
+	return w.udp.LocalAddr()
 }
 
 // RemoteAddr implements the ResponseWriter.RemoteAddr method.
 func (w *response) RemoteAddr() net.Addr {
-	switch {
-	case w.udpSession != nil:
-		return w.udpSession.RemoteAddr()
-	case w.tcp != nil:
+	if w.tcp != nil {
 		return w.tcp.RemoteAddr()
-	default:
-		panic("dns: internal error: udpSession and tcp both nil")
 	}
+	return w.udpSession.RemoteAddr()
 }
 
 // TsigStatus implements the ResponseWriter.TsigStatus method.
@@ -816,20 +784,13 @@ func (w *response) Hijack() { w.hijacked = true }
 
 // Close implements the ResponseWriter.Close method
 func (w *response) Close() error {
-	if w.closed {
-		return &Error{err: "connection already closed"}
+	// Can't close the udp conn, as that is actually the listener.
+	if w.tcp != nil {
+		e := w.tcp.Close()
+		w.tcp = nil
+		return e
 	}
-	w.closed = true
-
-	switch {
-	case w.udp != nil:
-		// Can't close the udp conn, as that is actually the listener.
-		return nil
-	case w.tcp != nil:
-		return w.tcp.Close()
-	default:
-		panic("dns: internal error: udp and tcp both nil")
-	}
+	return nil
 }
 
 // ConnectionState() implements the ConnectionStater.ConnectionState() interface.
