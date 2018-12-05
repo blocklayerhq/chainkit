@@ -17,6 +17,7 @@ import (
 	"github.com/blocklayerhq/chainkit/discovery"
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
+	"github.com/blocklayerhq/chainkit/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/rpc/client"
@@ -57,14 +58,14 @@ func startExplorer(ctx context.Context, p *project.Project) error {
 		"-p", fmt.Sprintf("%d:8080", p.Ports.Explorer),
 		ExplorerImage,
 	}
-	if err := docker(ctx, p, cmd...); err != nil {
+	if err := util.Run(ctx, "docker", cmd...); err != nil {
 		return errors.Wrap(err, "failed to start the explorer")
 	}
 	return nil
 }
 
 func startServer(ctx context.Context, p *project.Project) error {
-	if err := dockerRun(ctx, p, "start"); err != nil {
+	if err := util.DockerRun(ctx, p, "start"); err != nil {
 		return errors.Wrap(err, "failed to start the application")
 	}
 	return nil
@@ -99,7 +100,7 @@ func start(p *project.Project, chainID string) {
 		if err != nil {
 			ui.Fatal("Unable to create temporary file: %v", err)
 		}
-		if err := runWithFD(ctx, p, os.Stdin, f, os.Stderr, "docker", "save", p.Image); err != nil {
+		if err := util.RunWithFD(ctx, os.Stdin, f, os.Stderr, "docker", "save", p.Image); err != nil {
 			ui.Fatal("Unable to save image: %v", err)
 		}
 		f.Close()
@@ -131,7 +132,7 @@ func start(p *project.Project, chainID string) {
 
 		ui.Success("Retrieved genesis data")
 
-		if err := runWithFD(ctx, p, image, os.Stdout, os.Stderr, "docker", "load"); err != nil {
+		if err := util.RunWithFD(ctx, image, os.Stdout, os.Stderr, "docker", "load"); err != nil {
 			ui.Fatal("unable to load image: %v", err)
 		}
 	}

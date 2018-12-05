@@ -5,6 +5,7 @@ import (
 
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
+	"github.com/blocklayerhq/chainkit/util"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +37,7 @@ func cli(p *project.Project, args []string) {
 		p.Binaries.CLI,
 	}
 	cmd = append(cmd, args...)
-	if err := docker(ctx, p, cmd...); err != nil {
+	if err := util.Run(ctx, "docker", cmd...); err != nil {
 		ui.Fatal("Failed to start the cli (is the application running?): %v", err)
 	}
 }

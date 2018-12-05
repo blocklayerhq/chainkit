@@ -6,6 +6,7 @@ import (
 
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
+	"github.com/blocklayerhq/chainkit/util"
 	"github.com/spf13/cobra"
 )
 
@@ -47,14 +48,14 @@ func initialize(ctx context.Context, p *project.Project) error {
 	}
 
 	ui.Info("Generating configuration and genesis files")
-	if err := dockerRun(ctx, p, "init"); err != nil {
+	if err := util.DockerRun(ctx, p, "init"); err != nil {
 		//NOTE: some cosmos app (e.g. Gaia) take a --moniker option in the init command
 		// if the normal init fail, rerun with `--moniker $(hostname)`
 		hostname, err := os.Hostname()
 		if err != nil {
 			return err
 		}
-		if err := dockerRun(ctx, p, "init", "--moniker", hostname); err != nil {
+		if err := util.DockerRun(ctx, p, "init", "--moniker", hostname); err != nil {
 			return err
 		}
 	}
