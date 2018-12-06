@@ -12,22 +12,23 @@ import (
 
 // Builder is a wrapper around `docker build` which provides a better UX.
 type Builder struct {
-	image  string
-	parser *Parser
+	rootDir string
+	image   string
+	parser  *Parser
 }
 
 // BuildOpts contains a list of build options.
 type BuildOpts struct {
-	RootDir string
 	Verbose bool
 	NoCache bool
 }
 
 // New creates a new Builder.
-func New(image string) *Builder {
+func New(rootDir, image string) *Builder {
 	return &Builder{
-		image:  image,
-		parser: &Parser{},
+		rootDir: rootDir,
+		image:   image,
+		parser:  &Parser{},
 	}
 }
 
@@ -37,7 +38,7 @@ func (b *Builder) Build(ctx context.Context, opts BuildOpts) error {
 	if opts.NoCache {
 		args = append(args, "--no-cache")
 	}
-	args = append(args, opts.RootDir)
+	args = append(args, b.rootDir)
 	cmd := exec.CommandContext(ctx, "docker", args...)
 	outReader, err := cmd.StdoutPipe()
 	if err != nil {

@@ -9,8 +9,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
-	"sync"
 	"time"
 
 	"github.com/blocklayerhq/chainkit/project"
@@ -47,21 +45,37 @@ var (
 	}
 )
 
+// PeerInfo contains information about one peer.
+type PeerInfo struct {
+	NodeID            string   `json:"node_id"`
+	IP                []string `json:"ips"`
+	TendermintP2PPort int      `json:"tendermint_p2p_port"`
+}
+
 // Server is the discovery server
 type Server struct {
 	root string
 	port int
 	node *core.IpfsNode
-	api  iface.CoreAPI
-	dht  *dht.IpfsDHT
+
+	dht         *dht.IpfsDHT
+	connectedCh chan (struct{})
+
+	api iface.CoreAPI
 }
 
 // New returns a new discovery server
 func New(root string, port int) *Server {
 	return &Server{
-		root: root,
-		port: port,
+		root:        root,
+		port:        port,
+		connectedCh: make(chan struct{}),
 	}
+}
+
+// Stop must be called after start
+func (s *Server) Stop() error {
+	return s.node.Close()
 }
 
 // Start starts the discovery server
@@ -111,7 +125,8 @@ func (s *Server) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	s.dhtConnect(ctx)
+
+	go s.dhtConnect(ctx)
 
 	return nil
 }
@@ -127,34 +142,20 @@ func (s *Server) ipfsInit() error {
 	return fsrepo.Init(s.root, conf)
 }
 
-// Stop must be called after start
-func (s *Server) Stop() error {
-	return s.node.Close()
-}
+func (s *Server) dhtConnect(ctx context.Context) {
+	defer close(s.connectedCh)
+	for _, peerAddr := range bootstrapPeers {
+		addr, _ := iaddr.ParseString(peerAddr)
+		peerinfo, _ := pstore.InfoFromP2pAddr(addr.Multiaddr())
 
-// ListenAddresses returns the IPFS listening addresses for the server
-func (s *Server) ListenAddresses() []string {
-	ifaceAddrs, err := s.node.PeerHost.Network().InterfaceListenAddresses()
-	if err != nil {
-		panic(err)
+		err := s.node.PeerHost.Connect(ctx, *peerinfo)
+		if err != nil {
+			ui.Error("Connection with bootstrap node %v failed: %v", *peerinfo, err)
+			continue
+		}
+		ui.Verbose("Connection established with bootstrap node: %v", *peerinfo)
 	}
-
-	var addrs []string
-	for _, addr := range ifaceAddrs {
-		addrs = append(addrs, addr.String())
-	}
-	sort.Sort(sort.StringSlice(addrs))
-	return addrs
-}
-
-// AnnounceAddresses returns the announce addresses of IPFS
-func (s *Server) AnnounceAddresses() []string {
-	var addrs []string
-	for _, addr := range s.node.PeerHost.Addrs() {
-		addrs = append(addrs, addr.String())
-	}
-	sort.Sort(sort.StringSlice(addrs))
-	return addrs
+	ui.Info("connect done")
 }
 
 // Publish publishes chain information. Returns the chain ID.
@@ -190,55 +191,6 @@ func (s *Server) Publish(ctx context.Context, manifestPath, genesisPath, imagePa
 	}
 
 	return p.String(), nil
-}
-
-// Announce announces our presence as a network node.
-func (s *Server) Announce(ctx context.Context, chainID string, peer *PeerInfo) error {
-	id, err := cid.Decode(filepath.Base(chainID))
-	if err != nil {
-		return err
-	}
-
-	s.node.PeerHost.SetStreamHandler("/chainkit/0.1.0", func(stream net.Stream) {
-		defer stream.Close()
-		enc := json.NewEncoder(stream)
-		if err := enc.Encode(peer); err != nil {
-			ui.Error("failed to encode: %v", err)
-			return
-		}
-	})
-
-	cctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	if err := s.dht.Provide(cctx, id, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Server) dhtConnect(ctx context.Context) {
-	connect := func(peerAddr string) error {
-		addr, _ := iaddr.ParseString(peerAddr)
-		peerinfo, _ := pstore.InfoFromP2pAddr(addr.Multiaddr())
-
-		err := s.node.PeerHost.Connect(ctx, *peerinfo)
-		if err != nil {
-			ui.Error("%v", err)
-			return err
-		}
-		ui.Verbose("Connection established with bootstrap node: %v", *peerinfo)
-		return nil
-	}
-
-	wg := sync.WaitGroup{}
-	for _, peerAddr := range bootstrapPeers {
-		wg.Add(1)
-		go func(peerAddr string) {
-			defer wg.Done()
-			connect(peerAddr)
-		}(peerAddr)
-	}
-	wg.Wait()
 }
 
 // Join joins a network.
@@ -305,15 +257,40 @@ func (s *Server) getNetworkMetadata(ctx context.Context, chainID string) (io.Rea
 	return manifestFile, genesisFile, imageFile, nil
 }
 
-// PeerInfo contains information about one peer.
-type PeerInfo struct {
-	NodeID            string   `json:"node_id"`
-	IP                []string `json:"ips"`
-	TendermintP2PPort int      `json:"tendermint_p2p_port"`
+// Announce announces our presence as a network node.
+func (s *Server) Announce(ctx context.Context, chainID string, peer *PeerInfo) error {
+	// Wait for the DHT to be connected before searching.
+	<-s.connectedCh
+
+	id, err := cid.Decode(filepath.Base(chainID))
+	if err != nil {
+		return err
+	}
+
+	s.node.PeerHost.SetStreamHandler("/chainkit/0.1.0", func(stream net.Stream) {
+		defer stream.Close()
+		enc := json.NewEncoder(stream)
+		if err := enc.Encode(peer); err != nil {
+			ui.Error("failed to encode: %v", err)
+			return
+		}
+	})
+
+	cctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	if err := s.dht.Provide(cctx, id, true); err != nil {
+		return err
+	}
+	return nil
 }
 
 // SearchPeers looks for peers in the network
 func (s *Server) SearchPeers(ctx context.Context, chainID string) (<-chan *PeerInfo, error) {
+	// Wait for the DHT to be connected before searching.
+	ui.Info("waiting for connection")
+	<-s.connectedCh
+	ui.Info("wait done")
+
 	id, err := cid.Decode(filepath.Base(chainID))
 	if err != nil {
 		return nil, err

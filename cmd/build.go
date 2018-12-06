@@ -30,14 +30,12 @@ var buildCmd = &cobra.Command{
 			ui.Fatal("%v", err)
 		}
 
-		ui.Info("Building %s", p.Name)
-
-		b := builder.New(p.Image)
+		b := builder.New(rootDir, p.Image)
 		opts := builder.BuildOpts{
-			RootDir: rootDir,
 			Verbose: verbose,
 			NoCache: noCache,
 		}
+		ui.Info("Building %s", p.Name)
 		if err := b.Build(ctx, opts); err != nil {
 			ui.Fatal("Failed to build the application: %v", err)
 		}

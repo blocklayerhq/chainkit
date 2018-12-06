@@ -7,13 +7,11 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/blocklayerhq/chainkit/config"
 	"github.com/blocklayerhq/chainkit/project"
-	"github.com/blocklayerhq/chainkit/ui"
 )
 
 // DockerRun runs a command within the project's container.
@@ -49,7 +47,6 @@ func Run(ctx context.Context, command string, args ...string) error {
 
 // RunWithFD is like Run, but accepts custom stdin/stdout/stderr.
 func RunWithFD(ctx context.Context, stdin io.Reader, stdout, stderr io.Writer, command string, args ...string) error {
-	ui.Verbose("$ %s %s", command, strings.Join(args, " "))
 	cmd := exec.Command(command)
 	cmd.Args = append([]string{command}, args...)
 	cmd.Stdin = stdin

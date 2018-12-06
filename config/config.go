@@ -17,7 +17,7 @@ func (c *Config) StateDir() string {
 
 // LogFile returns the log file path
 func (c *Config) LogFile() string {
-	return path.Join(c.StateDir(), "log")
+	return path.Join(c.RootDir, "log")
 }
 
 // DataDir returns the data directory within the project state.

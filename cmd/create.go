@@ -32,7 +32,7 @@ var createCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		rootDir := getCwd(cmd)
+		rootDir := path.Join(getCwd(cmd), name)
 		p := project.New(name)
 		create(rootDir, p)
 	},
@@ -53,7 +53,8 @@ func create(rootDir string, p *project.Project) {
 		ui.Fatal("Failed to initialize: %v", err)
 	}
 
-	b := builder.New(p.Name)
+	ui.Info("Building %s", p.Name)
+	b := builder.New(rootDir, p.Image)
 	if err := b.Build(ctx, builder.BuildOpts{}); err != nil {
 		ui.Fatal("Failed to build the application: %v", err)
 	}

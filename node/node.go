@@ -55,14 +55,6 @@ func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) er
 		return err
 	}
 
-	for _, addr := range n.discovery.ListenAddresses() {
-		ui.Verbose("IPFS Swarm listening on %s", addr)
-	}
-
-	for _, addr := range n.discovery.AnnounceAddresses() {
-		ui.Verbose("IPFS Swarm announcing %s", addr)
-	}
-
 	// Create a network.
 	chainID, err := n.createNetwork(n.parentCtx, p)
 	if err != nil {
