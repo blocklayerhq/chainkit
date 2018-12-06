@@ -47,14 +47,14 @@ func (n *Node) Stop() {
 // starting.
 func (n *Node) Start(ctx context.Context, chainID string) error {
 	ui.Info("Starting %s", n.p.Name)
+
 	n.parentCtx, n.cancelCtx = context.WithCancel(ctx)
 
 	n.doneCh = make(chan struct{})
 	defer close(n.doneCh)
 
-	// Initialize if needed.
-	if err := initialize(n.parentCtx, n.p); err != nil {
-		return errors.Wrap(err, "initialization failed")
+	if err := n.init(ctx); err != nil {
+		return err
 	}
 
 	if err := n.discovery.Start(n.parentCtx); err != nil {
@@ -121,6 +121,33 @@ func (n *Node) Start(ctx context.Context, chainID string) error {
 	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", n.p.Ports.Explorer, n.p.Ports.TendermintRPC)))
 
 	return g.Wait()
+}
+
+// init initializes the server if needed and updates the runtime config.
+func (n *Node) init(ctx context.Context) error {
+	moniker, err := os.Hostname()
+	if err != nil {
+		return errors.Wrap(err, "unable to determine hostname")
+	}
+
+	// Initialize if needed.
+	if err := initialize(ctx, n.p); err != nil {
+		return errors.Wrap(err, "initialization failed")
+	}
+
+	return updateConfig(
+		n.p.ConfigFile(),
+		map[string]string{
+			// Set custom moniker. Needed to join nodes together.
+			"moniker": fmt.Sprintf("%q", moniker),
+			// Needed to join local/private networks.
+			"addr_book_strict": "false",
+			// Needed to enable dial_seeds
+			"unsafe": "true",
+			// Info logs are just too verbose.
+			"log_level": fmt.Sprintf("%q", "*:error"),
+		},
+	)
 }
 
 func (n *Node) createNetwork(ctx context.Context) (string, error) {
@@ -192,6 +219,8 @@ func (n *Node) announce(ctx context.Context, chainID string, peer *discovery.Pee
 }
 
 func (n *Node) discoverPeers(ctx context.Context, chainID string) error {
+	ui.Info("Discovering peer nodes...")
+
 	seenNodes := make(map[string]struct{})
 
 	for {

@@ -131,6 +131,11 @@ func (p *Project) ConfigDir() string {
 	return path.Join(p.StateDir(), "config")
 }
 
+// ConfigFile returns the path of the configuration file.
+func (p *Project) ConfigFile() string {
+	return path.Join(p.ConfigDir(), "config.toml")
+}
+
 // GenesisPath returns the genesis path for the project.
 func (p *Project) GenesisPath() string {
 	return path.Join(p.ConfigDir(), "genesis.json")
