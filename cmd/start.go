@@ -27,7 +27,8 @@ var startCmd = &cobra.Command{
 
 		ctx := context.Background()
 		cfg := &config.Config{
-			RootDir: rootDir,
+			RootDir:        rootDir,
+			PublishNetwork: true,
 		}
 		cfg.Ports, err = config.AllocatePorts()
 		if err != nil {

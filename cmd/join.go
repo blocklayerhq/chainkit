@@ -32,7 +32,9 @@ var joinCmd = &cobra.Command{
 
 		ui.Info("Joining network %s", chainID)
 		cfg := &config.Config{
-			RootDir: path.Join(networksDir, filepath.Base(chainID)),
+			RootDir:        path.Join(networksDir, filepath.Base(chainID)),
+			PublishNetwork: false,
+			ChainID:        chainID,
 		}
 		cfg.Ports, err = config.AllocatePorts()
 		if err != nil {
@@ -45,9 +47,9 @@ var joinCmd = &cobra.Command{
 		}
 		defer d.Stop()
 
-		p, genesis, err := d.Join(ctx, chainID, cfg.ManifestPath())
+		p, genesis, err := d.Join(ctx, cfg.ChainID, cfg.ManifestPath())
 		if err != nil {
-			ui.Fatal("Unable to retrieve network information for %q: %v", chainID, err)
+			ui.Fatal("Unable to retrieve network information for %q: %v", cfg.ChainID, err)
 		}
 
 		n := node.New(cfg, d)

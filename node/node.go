@@ -55,17 +55,22 @@ func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) er
 		return err
 	}
 
+	chainID := n.config.ChainID
+
 	// Create a network.
-	ui.Info("Publishing network...")
-	chainID, err := n.createNetwork(n.parentCtx, p)
-	if err != nil {
-		return err
+	if n.config.PublishNetwork {
+		ui.Info("Publishing network...")
+		var err error
+		chainID, err = n.createNetwork(n.parentCtx, p)
+		if err != nil {
+			return err
+		}
+		ui.Success("Success! Published network %s as %s\n\nOther nodes can now join this network by running\n  %s\n",
+			ui.Emphasize(p.Name),
+			ui.Emphasize(chainID),
+			ui.Emphasize(fmt.Sprintf("chainkit join %s", chainID)),
+		)
 	}
-	ui.Success("Success! Published network %s as %s\n\nOther nodes can now join this network by running\n  %s\n",
-		ui.Emphasize(p.Name),
-		ui.Emphasize(chainID),
-		ui.Emphasize(fmt.Sprintf("chainkit join %s", chainID)),
-	)
 
 	ui.Info("Starting node...")
 	if err := n.server.start(n.parentCtx, p); err != nil {
@@ -78,10 +83,10 @@ func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) er
 	}
 
 	ui.Success("Success! The node is now up and running.")
-	ui.Success("Node ID: %s", ui.Emphasize(peer.NodeID))
-	ui.Success("Logs can be found in: %s", ui.Emphasize(n.config.LogFile()))
-	ui.Success("Application is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", n.config.Ports.TendermintRPC)))
-	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", n.config.Ports.Explorer, n.config.Ports.TendermintRPC)))
+	ui.Success("  Node ID                   : %s", ui.Emphasize(peer.NodeID))
+	ui.Success("  Logs can be found in      : %s", ui.Emphasize(n.config.LogFile()))
+	ui.Success("  Application is live at    : %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", n.config.Ports.TendermintRPC)))
+	ui.Success("  Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", n.config.Ports.Explorer, n.config.Ports.TendermintRPC)))
 
 	g, gctx := errgroup.WithContext(n.parentCtx)
 

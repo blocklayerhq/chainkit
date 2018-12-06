@@ -6,8 +6,10 @@ import (
 
 // Config represents the node configuration.
 type Config struct {
-	RootDir string
-	Ports   *PortMapper
+	RootDir        string
+	Ports          *PortMapper
+	ChainID        string
+	PublishNetwork bool
 }
 
 // StateDir returns the state directory within the project.
