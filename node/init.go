@@ -63,8 +63,16 @@ func fixFsPermissions(ctx context.Context, config *config.Config, p *project.Pro
 	}
 	daemonDir := path.Join("/", "root", "."+p.Binaries.Daemon)
 	cliDir := path.Join("/", "root", "."+p.Binaries.CLI)
-	cmd := fmt.Sprintf("chown -R %s:%s %s %s", u.Uid, u.Gid, daemonDir, cliDir)
-	if err := util.DockerRun(ctx, config, p, cmd); err != nil {
+	user := fmt.Sprintf("%s:%s", u.Uid, u.Gid)
+	cmd := []string{
+		"run", "--rm",
+		"-v", config.StateDir() + ":" + daemonDir,
+		"-v", config.CLIDir() + ":" + cliDir,
+		"--name", p.Image,
+		p.Image + ":latest",
+		"chown", "-R", user, daemonDir, cliDir,
+	}
+	if err := util.Run(ctx, "docker", cmd...); err != nil {
 		return errors.Wrap(err, "Cannot change directories permissions")
 	}
 	return nil
