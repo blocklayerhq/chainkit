@@ -1,11 +1,5 @@
 version: 2
 
-workflows:
-  version: 2
-  build:
-    jobs:
-      - build
-
 jobs:
   build:
     docker:
@@ -26,8 +20,31 @@ jobs:
       - run:
           name: Build
           command:
-            go build
+            make
       - save_cache:
           key: v1-pkg-cache
           paths:
             - "/go/pkg"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - chainkit
+
+  integration-test:
+    machine: true
+    steps:
+        - checkout
+        - attach_workspace:
+            at: /tmp/build
+        - run: ./test/integration.sh /tmp/build/chainkit
+
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+      - integration-test:
+          requires:
+            - build
+
