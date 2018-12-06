@@ -56,12 +56,18 @@ func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) er
 	}
 
 	// Create a network.
+	ui.Info("Publishing network...")
 	chainID, err := n.createNetwork(n.parentCtx, p)
 	if err != nil {
 		return err
 	}
-	ui.Success("Network is live at: %v", chainID)
+	ui.Success("Success! Published network %s as %s\n\nOther nodes can now join this network by running\n  %s\n",
+		ui.Emphasize(p.Name),
+		ui.Emphasize(chainID),
+		ui.Emphasize(fmt.Sprintf("chainkit join %s", chainID)),
+	)
 
+	ui.Info("Starting node...")
 	if err := n.server.start(n.parentCtx, p); err != nil {
 		return err
 	}
@@ -70,6 +76,12 @@ func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) er
 	if err != nil {
 		return err
 	}
+
+	ui.Success("Success! The node is now up and running.")
+	ui.Success("Node ID: %s", ui.Emphasize(peer.NodeID))
+	ui.Success("Logs can be found in: %s", ui.Emphasize(n.config.LogFile()))
+	ui.Success("Application is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", n.config.Ports.TendermintRPC)))
+	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", n.config.Ports.Explorer, n.config.Ports.TendermintRPC)))
 
 	g, gctx := errgroup.WithContext(n.parentCtx)
 
@@ -92,11 +104,6 @@ func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) er
 	g.Go(func() error {
 		return n.discoverPeers(gctx, chainID)
 	})
-
-	ui.Success("Node is up and running:     %s", peer.NodeID)
-	ui.Info("    Logs can be found in: %s", n.config.LogFile())
-	ui.Success("Application is live at:     %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", n.config.Ports.TendermintRPC)))
-	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", n.config.Ports.Explorer, n.config.Ports.TendermintRPC)))
 
 	return g.Wait()
 }
@@ -149,8 +156,6 @@ func (n *Node) createNetwork(ctx context.Context, p *project.Project) (string, e
 	}
 	f.Close()
 
-	ui.Verbose("Image saved at %s", f.Name())
-
 	chainID, err := n.discovery.Publish(ctx, n.config.ManifestPath(), n.config.GenesisPath(), f.Name())
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create network")
@@ -160,6 +165,7 @@ func (n *Node) createNetwork(ctx context.Context, p *project.Project) (string, e
 }
 
 func (n *Node) announce(ctx context.Context, chainID string, peer *discovery.PeerInfo) error {
+	ui.Info("Registering this node on the network...")
 	for {
 		select {
 		case <-ctx.Done():
@@ -169,7 +175,7 @@ func (n *Node) announce(ctx context.Context, chainID string, peer *discovery.Pee
 
 		err := n.discovery.Announce(ctx, chainID, peer)
 		if err == nil {
-			ui.Success("Node successfully announced")
+			ui.Info("Node successfully registered")
 			return nil
 		}
 		ui.Error("Failed to announce: %v", err)
@@ -182,7 +188,7 @@ func (n *Node) announce(ctx context.Context, chainID string, peer *discovery.Pee
 }
 
 func (n *Node) discoverPeers(ctx context.Context, chainID string) error {
-	ui.Info("Discovering peer nodes...")
+	ui.Info("Discovering network nodes...")
 
 	seenNodes := make(map[string]struct{})
 
@@ -194,7 +200,7 @@ func (n *Node) discoverPeers(ctx context.Context, chainID string) error {
 		default:
 		}
 
-		peerCh, err := n.discovery.SearchPeers(ctx, chainID)
+		peerCh, err := n.discovery.Peers(ctx, chainID)
 		if err != nil {
 			return err
 		}
@@ -203,7 +209,7 @@ func (n *Node) discoverPeers(ctx context.Context, chainID string) error {
 			if _, ok := seenNodes[peer.NodeID]; ok {
 				continue
 			}
-			ui.Info("Discovered node %q", peer.NodeID)
+			ui.Info("Discovered node %s", ui.Emphasize(peer.NodeID))
 			if err := n.server.dialSeeds(ctx, peer); err != nil {
 				ui.Error("Failed to dial peer: %v", err)
 				continue

@@ -80,6 +80,8 @@ func (s *Server) Stop() error {
 
 // Start starts the discovery server
 func (s *Server) Start(ctx context.Context) error {
+	ui.Info("Initializing node...")
+
 	daemonLocked, err := fsrepo.LockedByOtherProcess(s.root)
 	if err != nil {
 		return err
@@ -153,9 +155,7 @@ func (s *Server) dhtConnect(ctx context.Context) {
 			ui.Error("Connection with bootstrap node %v failed: %v", *peerinfo, err)
 			continue
 		}
-		ui.Verbose("Connection established with bootstrap node: %v", *peerinfo)
 	}
-	ui.Info("connect done")
 }
 
 // Publish publishes chain information. Returns the chain ID.
@@ -284,12 +284,10 @@ func (s *Server) Announce(ctx context.Context, chainID string, peer *PeerInfo) e
 	return nil
 }
 
-// SearchPeers looks for peers in the network
-func (s *Server) SearchPeers(ctx context.Context, chainID string) (<-chan *PeerInfo, error) {
+// Peers looks for peers in the network
+func (s *Server) Peers(ctx context.Context, chainID string) (<-chan *PeerInfo, error) {
 	// Wait for the DHT to be connected before searching.
-	ui.Info("waiting for connection")
 	<-s.connectedCh
-	ui.Info("wait done")
 
 	id, err := cid.Decode(filepath.Base(chainID))
 	if err != nil {
