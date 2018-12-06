@@ -12,28 +12,15 @@ import (
 	"path"
 	"strings"
 
+	"github.com/blocklayerhq/chainkit/config"
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/blocklayerhq/chainkit/util"
 	"github.com/pkg/errors"
 )
 
-func fixFsPermissions(ctx context.Context, p *project.Project) error {
-	u, err := user.Current()
-	if err != nil {
-		return errors.Wrap(err, "Cannot get user id")
-	}
-	daemonDir := path.Join("/", "root", "."+p.Binaries.Daemon)
-	cliDir := path.Join("/", "root", "."+p.Binaries.CLI)
-	cmd := fmt.Sprintf("chown -R %s:%s %s %s", u.Uid, u.Gid, daemonDir, cliDir)
-	if err := util.DockerRun(ctx, p, cmd); err != nil {
-		return errors.Wrap(err, "Cannot change directories permissions")
-	}
-	return nil
-}
-
-func initialize(ctx context.Context, p *project.Project) error {
-	_, err := os.Stat(p.StateDir())
+func initialize(ctx context.Context, config *config.Config, p *project.Project) error {
+	_, err := os.Stat(config.GenesisPath())
 
 	// Skip initialization if already initialized.
 	if err == nil {
@@ -46,26 +33,40 @@ func initialize(ctx context.Context, p *project.Project) error {
 	}
 
 	ui.Info("Generating configuration and genesis files")
-	if err := util.DockerRun(ctx, p, "init"); err != nil {
+	if err := util.DockerRun(ctx, config, p, "init"); err != nil {
 		//NOTE: some cosmos app (e.g. Gaia) take a --moniker option in the init command
 		// if the normal init fail, rerun with `--moniker $(hostname)`
 		hostname, err := os.Hostname()
 		if err != nil {
 			return err
 		}
-		if err := util.DockerRun(ctx, p, "init", "--moniker", hostname); err != nil {
+		if err := util.DockerRun(ctx, config, p, "init", "--moniker", hostname); err != nil {
 			return err
 		}
 	}
 
-	if err := fixFsPermissions(ctx, p); err != nil {
+	if err := fixFsPermissions(ctx, config, p); err != nil {
 		return err
 	}
 
-	if err := ui.Tree(p.StateDir(), nil); err != nil {
+	if err := ui.Tree(config.StateDir(), []string{"ipfs"}); err != nil {
 		return errors.Wrap(err, "Cannot print source tree")
 	}
 
+	return nil
+}
+
+func fixFsPermissions(ctx context.Context, config *config.Config, p *project.Project) error {
+	u, err := user.Current()
+	if err != nil {
+		return errors.Wrap(err, "Cannot get user id")
+	}
+	daemonDir := path.Join("/", "root", "."+p.Binaries.Daemon)
+	cliDir := path.Join("/", "root", "."+p.Binaries.CLI)
+	cmd := fmt.Sprintf("chown -R %s:%s %s %s", u.Uid, u.Gid, daemonDir, cliDir)
+	if err := util.DockerRun(ctx, config, p, cmd); err != nil {
+		return errors.Wrap(err, "Cannot change directories permissions")
+	}
 	return nil
 }
 

@@ -20,33 +20,30 @@ type binaries struct {
 // Project represents a project
 type Project struct {
 	Name     string
-	RootDir  string `yaml:"-"`
-	Binaries *binaries
 	Image    string
-	Ports    *PortMapper `yaml:"-"`
+	Binaries *binaries
 }
 
 // New will create a new project in the given directory.
-func New(dir, name string) *Project {
+func New(name string) *Project {
 	p := &Project{
-		Name: name,
+		Name:  name,
+		Image: fmt.Sprintf("chainkit-%s", name),
 		Binaries: &binaries{
 			CLI:    name + "cli",
 			Daemon: name + "d",
 		},
-		RootDir: path.Join(dir, name),
 	}
-	p.SetDefaults()
 	return p
 }
 
 // Save serializes the project data on disk
-func (p *Project) Save() error {
+func (p *Project) Save(path string) error {
 	ybuf, err := yaml.Marshal(p)
 	if err != nil {
 		return err
 	}
-	fp, err := os.Create(path.Join(p.RootDir, manifestFile))
+	fp, err := os.Create(path)
 	if err != nil {
 		return err
 	}
@@ -65,6 +62,8 @@ func (p *Project) Validate() error {
 	switch {
 	case p.Name == "":
 		return errorOut("name")
+	case p.Image == "":
+		return errorOut("image")
 	case p.Binaries == nil:
 		return errorOut("binaries")
 	case p.Binaries.CLI == "":
@@ -76,18 +75,10 @@ func (p *Project) Validate() error {
 	return nil
 }
 
-// SetDefaults sets the project default values.
-func (p *Project) SetDefaults() {
-	switch {
-	case p.Image == "":
-		p.Image = fmt.Sprintf("chainkit-%s", p.Name)
-	}
-}
-
-// Load will load a project from a given directory
-func Load(dir string) (*Project, error) {
+// Parse parses a manifest.
+func Parse(path string) (*Project, error) {
 	errMsg := fmt.Sprintf("Cannot read manifest %q", manifestFile)
-	data, err := ioutil.ReadFile(path.Join(dir, manifestFile))
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, errors.Wrap(err, errMsg)
 	}
@@ -95,58 +86,15 @@ func Load(dir string) (*Project, error) {
 	if err = yaml.Unmarshal(data, p); err != nil {
 		return nil, errors.Wrap(err, errMsg)
 	}
-	p.RootDir = dir
 
 	if err := p.Validate(); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("%s validation", manifestFile))
 	}
 
-	p.Ports, err = AllocatePorts()
-	if err != nil {
-		return nil, err
-	}
-
-	p.SetDefaults()
-
 	return p, nil
 }
 
-// StateDir returns the state directory within the project.
-func (p *Project) StateDir() string {
-	return path.Join(p.RootDir, "state")
-}
-
-// LogFile returns the log file path
-func (p *Project) LogFile() string {
-	return path.Join(p.StateDir(), "log")
-}
-
-// DataDir returns the data directory within the project state.
-func (p *Project) DataDir() string {
-	return path.Join(p.StateDir(), "data")
-}
-
-// ConfigDir returns the config directory within the project state.
-func (p *Project) ConfigDir() string {
-	return path.Join(p.StateDir(), "config")
-}
-
-// ConfigFile returns the path of the configuration file.
-func (p *Project) ConfigFile() string {
-	return path.Join(p.ConfigDir(), "config.toml")
-}
-
-// GenesisPath returns the genesis path for the project.
-func (p *Project) GenesisPath() string {
-	return path.Join(p.ConfigDir(), "genesis.json")
-}
-
-// CLIDir returns the CLI directory within the project state.
-func (p *Project) CLIDir() string {
-	return path.Join(p.StateDir(), "cli")
-}
-
-// IPFSDir returns the IPFS data directory within the project state.
-func (p *Project) IPFSDir() string {
-	return path.Join(p.StateDir(), "ipfs")
+// Load will load a project from a given directory
+func Load(dir string) (*Project, error) {
+	return Parse(path.Join(dir, manifestFile))
 }

@@ -13,7 +13,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
+	"github.com/blocklayerhq/chainkit/util"
 	"github.com/ipsn/go-ipfs/core"
 	"github.com/ipsn/go-ipfs/core/coreapi"
 	iface "github.com/ipsn/go-ipfs/core/coreapi/interface"
@@ -27,6 +29,7 @@ import (
 	"github.com/ipsn/go-ipfs/gxlibs/github.com/multiformats/go-multiaddr"
 	"github.com/ipsn/go-ipfs/plugin/loader"
 	"github.com/ipsn/go-ipfs/repo/fsrepo"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -155,7 +158,7 @@ func (s *Server) AnnounceAddresses() []string {
 }
 
 // Publish publishes chain information. Returns the chain ID.
-func (s *Server) Publish(ctx context.Context, genesisPath, imagePath string) (string, error) {
+func (s *Server) Publish(ctx context.Context, manifestPath, genesisPath, imagePath string) (string, error) {
 	sandbox, err := ioutil.TempDir(os.TempDir(), "chainkit-network")
 	if err != nil {
 		return "", err
@@ -166,6 +169,9 @@ func (s *Server) Publish(ctx context.Context, genesisPath, imagePath string) (st
 		return "", err
 	}
 
+	if err := os.Link(manifestPath, path.Join(sandbox, "chainkit.yml")); err != nil {
+		return "", err
+	}
 	if err := os.Link(genesisPath, path.Join(sandbox, "genesis.json")); err != nil {
 		return "", err
 	}
@@ -236,28 +242,67 @@ func (s *Server) dhtConnect(ctx context.Context) {
 }
 
 // Join joins a network.
-func (s *Server) Join(ctx context.Context, chainID string) (io.ReadCloser, io.ReadCloser, error) {
-	genesisPath, err := iface.ParsePath(path.Join(chainID, "genesis.json"))
+func (s *Server) Join(ctx context.Context, chainID, manifestPath string) (*project.Project, []byte, error) {
+	manifest, genesis, image, err := s.getNetworkMetadata(ctx, chainID)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to join network")
+	}
+	defer manifest.Close()
+	defer genesis.Close()
+	defer image.Close()
+
+	genesisData, err := ioutil.ReadAll(genesis)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to read genesis file")
+	}
+
+	f, err := os.OpenFile(manifestPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to overwrite manifest file")
+	}
+	if _, err := io.Copy(f, manifest); err != nil {
+		return nil, nil, errors.Wrap(err, "unable to write manifest")
+	}
+
+	if err := util.RunWithFD(ctx, image, os.Stdout, os.Stderr, "docker", "load"); err != nil {
+		return nil, nil, errors.Wrap(err, "unable to load image")
+	}
+
+	p, err := project.Parse(manifestPath)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	return p, genesisData, nil
+}
+
+// Join joins a network.
+func (s *Server) getNetworkMetadata(ctx context.Context, chainID string) (io.ReadCloser, io.ReadCloser, io.ReadCloser, error) {
+	manifestPath, err := iface.ParsePath(path.Join(chainID, "chainkit.yml"))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	manifestFile, err := s.api.Unixfs().Get(ctx, manifestPath)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	genesisPath, err := iface.ParsePath(path.Join(chainID, "genesis.json"))
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	genesisFile, err := s.api.Unixfs().Get(ctx, genesisPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	imagePath, err := iface.ParsePath(path.Join(chainID, "image.tgz"))
 	imageFile, err := s.api.Unixfs().Get(ctx, imagePath)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	// genesis, err := ioutil.ReadAll(file)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	return genesisFile, imageFile, nil
+	return manifestFile, genesisFile, imageFile, nil
 }
 
 // PeerInfo contains information about one peer.

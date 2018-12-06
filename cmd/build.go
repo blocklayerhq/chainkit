@@ -15,7 +15,6 @@ var buildCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-
 		verbose, err := cmd.Flags().GetBool("verbose")
 		if err != nil {
 			ui.Fatal("unable to resolve flag: %v", err)
@@ -25,13 +24,17 @@ var buildCmd = &cobra.Command{
 			ui.Fatal("unable to resolve flag: %v", err)
 		}
 
-		p, err := project.Load(getCwd(cmd))
+		rootDir := getCwd(cmd)
+		p, err := project.Load(rootDir)
 		if err != nil {
 			ui.Fatal("%v", err)
 		}
 
-		b := builder.New(p)
+		ui.Info("Building %s", p.Name)
+
+		b := builder.New(p.Image)
 		opts := builder.BuildOpts{
+			RootDir: rootDir,
 			Verbose: verbose,
 			NoCache: noCache,
 		}

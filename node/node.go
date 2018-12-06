@@ -3,11 +3,11 @@ package node
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"time"
 
+	"github.com/blocklayerhq/chainkit/config"
 	"github.com/blocklayerhq/chainkit/discovery"
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
@@ -18,7 +18,7 @@ import (
 
 // Node is a chainkit Node
 type Node struct {
-	p *project.Project
+	config *config.Config
 
 	parentCtx context.Context
 	cancelCtx context.CancelFunc
@@ -29,11 +29,11 @@ type Node struct {
 }
 
 // New creates a new Node
-func New(p *project.Project) *Node {
+func New(config *config.Config, discovery *discovery.Server) *Node {
 	return &Node{
-		p:         p,
-		server:    newServer(p),
-		discovery: discovery.New(p.IPFSDir(), p.Ports.IPFS),
+		config:    config,
+		server:    newServer(config),
+		discovery: discovery,
 	}
 }
 
@@ -45,22 +45,15 @@ func (n *Node) Stop() {
 
 // Start starts the node. It will not return until it finishes
 // starting.
-func (n *Node) Start(ctx context.Context, chainID string) error {
-	ui.Info("Starting %s", n.p.Name)
-
+func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) error {
 	n.parentCtx, n.cancelCtx = context.WithCancel(ctx)
 
 	n.doneCh = make(chan struct{})
 	defer close(n.doneCh)
 
-	if err := n.init(ctx); err != nil {
+	if err := n.init(ctx, p, genesis); err != nil {
 		return err
 	}
-
-	if err := n.discovery.Start(n.parentCtx); err != nil {
-		return errors.Wrap(err, "unable to start discovery server")
-	}
-	defer n.discovery.Stop()
 
 	for _, addr := range n.discovery.ListenAddresses() {
 		ui.Verbose("IPFS Swarm listening on %s", addr)
@@ -70,22 +63,14 @@ func (n *Node) Start(ctx context.Context, chainID string) error {
 		ui.Verbose("IPFS Swarm announcing %s", addr)
 	}
 
-	// Create or join a network.
-	if chainID == "" {
-		var err error
-		chainID, err = n.createNetwork(n.parentCtx)
-		if err != nil {
-			return err
-		}
-		ui.Success("Network is live at: %v", chainID)
-	} else {
-		ui.Info("Joining network %s", chainID)
-		if err := n.joinNetwork(n.parentCtx, chainID); err != nil {
-			return err
-		}
+	// Create a network.
+	chainID, err := n.createNetwork(n.parentCtx, p)
+	if err != nil {
+		return err
 	}
+	ui.Success("Network is live at: %v", chainID)
 
-	if err := n.server.start(n.parentCtx); err != nil {
+	if err := n.server.start(n.parentCtx, p); err != nil {
 		return err
 	}
 
@@ -103,7 +88,7 @@ func (n *Node) Start(ctx context.Context, chainID string) error {
 
 	// Start the explorer.
 	g.Go(func() error {
-		return startExplorer(gctx, n.p)
+		return startExplorer(gctx, n.config, p)
 	})
 
 	// Announce
@@ -117,26 +102,26 @@ func (n *Node) Start(ctx context.Context, chainID string) error {
 	})
 
 	ui.Success("Node is up and running:     %s", peer.NodeID)
-	ui.Success("Application is live at:     %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", n.p.Ports.TendermintRPC)))
-	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", n.p.Ports.Explorer, n.p.Ports.TendermintRPC)))
+	ui.Success("Application is live at:     %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", n.config.Ports.TendermintRPC)))
+	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", n.config.Ports.Explorer, n.config.Ports.TendermintRPC)))
 
 	return g.Wait()
 }
 
 // init initializes the server if needed and updates the runtime config.
-func (n *Node) init(ctx context.Context) error {
+func (n *Node) init(ctx context.Context, p *project.Project, genesis []byte) error {
 	moniker, err := os.Hostname()
 	if err != nil {
 		return errors.Wrap(err, "unable to determine hostname")
 	}
 
 	// Initialize if needed.
-	if err := initialize(ctx, n.p); err != nil {
+	if err := initialize(ctx, n.config, p); err != nil {
 		return errors.Wrap(err, "initialization failed")
 	}
 
-	return updateConfig(
-		n.p.ConfigFile(),
+	err = updateConfig(
+		n.config.ConfigFile(),
 		map[string]string{
 			// Set custom moniker. Needed to join nodes together.
 			"moniker": fmt.Sprintf("%q", moniker),
@@ -148,52 +133,39 @@ func (n *Node) init(ctx context.Context) error {
 			"log_level": fmt.Sprintf("%q", "*:error"),
 		},
 	)
+	if err != nil {
+		return err
+	}
+
+	if genesis == nil {
+		return nil
+	}
+
+	if err := ioutil.WriteFile(n.config.GenesisPath(), genesis, 0644); err != nil {
+		return errors.Wrap(err, "unable to overwrite genesis file")
+	}
+
+	return nil
 }
 
-func (n *Node) createNetwork(ctx context.Context) (string, error) {
+func (n *Node) createNetwork(ctx context.Context, p *project.Project) (string, error) {
 	f, err := ioutil.TempFile(os.TempDir(), "chainkit-image")
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create temporary file")
 	}
-	if err := util.RunWithFD(ctx, os.Stdin, f, os.Stderr, "docker", "save", n.p.Image); err != nil {
+	if err := util.RunWithFD(ctx, os.Stdin, f, os.Stderr, "docker", "save", p.Image); err != nil {
 		return "", errors.Wrap(err, "unable to save image")
 	}
 	f.Close()
 
 	ui.Verbose("Image saved at %s", f.Name())
 
-	chainID, err := n.discovery.Publish(ctx, n.p.GenesisPath(), f.Name())
+	chainID, err := n.discovery.Publish(ctx, n.config.ManifestPath(), n.config.GenesisPath(), f.Name())
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create network")
 	}
 
 	return chainID, nil
-}
-
-func (n *Node) joinNetwork(ctx context.Context, chainID string) error {
-	genesis, image, err := n.discovery.Join(n.parentCtx, chainID)
-	if err != nil {
-		return errors.Wrap(err, "unable to join network")
-	}
-	defer genesis.Close()
-	defer image.Close()
-
-	f, err := os.OpenFile(n.p.GenesisPath(), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-	if err != nil {
-		return errors.Wrap(err, "unable to overwrite genesis file")
-	}
-
-	if _, err := io.Copy(f, genesis); err != nil {
-		return errors.Wrap(err, "unable to write genesis")
-	}
-
-	ui.Success("Retrieved genesis data")
-
-	if err := util.RunWithFD(n.parentCtx, image, os.Stdout, os.Stderr, "docker", "load"); err != nil {
-		return errors.Wrap(err, "unable to load image")
-	}
-
-	return nil
 }
 
 func (n *Node) announce(ctx context.Context, chainID string, peer *discovery.PeerInfo) error {

@@ -32,8 +32,9 @@ var createCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
-		p := project.New(getCwd(cmd), name)
-		create(p)
+		rootDir := getCwd(cmd)
+		p := project.New(name)
+		create(rootDir, p)
 	},
 }
 
@@ -43,21 +44,21 @@ func init() {
 	rootCmd.AddCommand(createCmd)
 }
 
-func create(p *project.Project) {
+func create(rootDir string, p *project.Project) {
 	ctx := context.Background()
 
-	ui.Info("Creating a new blockchain app in %s", ui.Emphasize(p.RootDir))
+	ui.Info("Creating a new blockchain app in %s", ui.Emphasize(rootDir))
 
-	if err := scaffold(p); err != nil {
+	if err := scaffold(rootDir, p); err != nil {
 		ui.Fatal("Failed to initialize: %v", err)
 	}
 
-	b := builder.New(p)
+	b := builder.New(p.Name)
 	if err := b.Build(ctx, builder.BuildOpts{}); err != nil {
 		ui.Fatal("Failed to build the application: %v", err)
 	}
 
-	ui.Success("Success! Created %s at %s", ui.Emphasize(p.Name), ui.Emphasize(p.RootDir))
+	ui.Success("Success! Created %s at %s", ui.Emphasize(p.Name), ui.Emphasize(rootDir))
 	printGettingStarted(p)
 }
 
@@ -83,60 +84,60 @@ We suggest that you begin by typing:
 	)
 }
 
-func scaffold(p *project.Project) error {
+func scaffold(rootDir string, p *project.Project) error {
 	ui.Info("Scaffolding base application")
 
 	gosource := goSrc()
 
-	if !strings.HasPrefix(p.RootDir, gosource) {
+	if !strings.HasPrefix(rootDir, gosource) {
 		return fmt.Errorf("you must run this command within your GOPATH (%q)", goPath())
 	}
 
 	// Make sure the destination path doesn't exist.
-	if _, err := os.Stat(p.RootDir); !os.IsNotExist(err) {
-		return fmt.Errorf("destination path %q already exists", p.RootDir)
+	if _, err := os.Stat(rootDir); !os.IsNotExist(err) {
+		return fmt.Errorf("destination path %q already exists", rootDir)
 	}
 
 	ctx := &templateContext{
 		Name:    p.Name,
-		RootDir: p.RootDir,
-		GoPkg:   strings.TrimPrefix(p.RootDir, gosource+"/"),
+		RootDir: rootDir,
+		GoPkg:   strings.TrimPrefix(rootDir, gosource+"/"),
 	}
 
-	if err := extractFiles(ctx, p); err != nil {
+	if err := extractFiles(ctx, rootDir, p); err != nil {
 		return err
 	}
-	if err := ui.Tree(p.RootDir, []string{"k8s"}); err != nil {
+	if err := ui.Tree(rootDir, []string{"k8s"}); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func extractFiles(ctx *templateContext, p *project.Project) error {
+func extractFiles(ctx *templateContext, rootDir string, p *project.Project) error {
 	err := httpfs.Walk(templates.Assets, "/", func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		return extractFile(ctx, path, p, fi)
+		return extractFile(ctx, rootDir, path, p, fi)
 	})
 	return err
 }
 
-func extractFile(ctx *templateContext, src string, p *project.Project, fi os.FileInfo) error {
+func extractFile(ctx *templateContext, rootDir, src string, p *project.Project, fi os.FileInfo) error {
 	// Templatize the file name.
 	parsedSrc, err := templatize(ctx, src, src)
 	if err != nil {
 		return err
 	}
 
-	dstPath := path.Join(p.RootDir, string(parsedSrc))
+	dstPath := path.Join(rootDir, string(parsedSrc))
 	if fi.IsDir() {
 		return os.MkdirAll(dstPath, fi.Mode())
 	}
 
 	// Save the project manifest on disk
-	if err := p.Save(); err != nil {
+	if err := p.Save(path.Join(rootDir, "chainkit.yml")); err != nil {
 		return errors.Wrap(err, "Failed to create chainkit.yml")
 	}
 

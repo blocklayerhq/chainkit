@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/blocklayerhq/chainkit/config"
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/util"
 	"github.com/pkg/errors"
@@ -12,19 +13,10 @@ import (
 // explorerImage defines the container image to pull for running the Cosmos Explorer
 const explorerImage = "samalba/cosmos-explorer-localdev:20181204"
 
-func startExplorer(ctx context.Context, p *project.Project) error {
-	containerName := fmt.Sprintf("%s-explorer", p.Image)
-	// TODO: Leaving disabled for now as it helps finding leaks.
-	// defer func() {
-	// 	// Failsafe: Sometimes, if we stop a `docker run --rm`, it will leave
-	// 	// the container behind.
-	// 	util.Run(ctx, "docker", "rm", "-f", containerName)
-	// }()
-
+func startExplorer(ctx context.Context, config *config.Config, p *project.Project) error {
 	cmd := []string{
 		"run", "--rm",
-		"--name", containerName,
-		"-p", fmt.Sprintf("%d:8080", p.Ports.Explorer),
+		"-p", fmt.Sprintf("%d:8080", config.Ports.Explorer),
 		explorerImage,
 	}
 	if err := util.Run(ctx, "docker", cmd...); err != nil {

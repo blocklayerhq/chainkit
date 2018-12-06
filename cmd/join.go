@@ -4,48 +4,57 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"path"
+	"path/filepath"
 	"syscall"
 
 	"github.com/blocklayerhq/chainkit/config"
 	"github.com/blocklayerhq/chainkit/discovery"
 	"github.com/blocklayerhq/chainkit/node"
-	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/spf13/cobra"
 )
 
-var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "Start the application",
-	Args:  cobra.ExactArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
-		rootDir := getCwd(cmd)
-		p, err := project.Load(rootDir)
-		if err != nil {
-			ui.Fatal("%v", err)
-		}
+var (
+	networksDir = os.ExpandEnv("$HOME/.chainkit/networks")
+)
 
-		ctx := context.Background()
+var joinCmd = &cobra.Command{
+	Use:   "join",
+	Short: "Join a network",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		var (
+			ctx     = context.Background()
+			err     error
+			chainID = args[0]
+		)
+
+		ui.Info("Joining network %s", chainID)
 		cfg := &config.Config{
-			RootDir: rootDir,
+			RootDir: path.Join(networksDir, filepath.Base(chainID)),
 		}
 		cfg.Ports, err = config.AllocatePorts()
 		if err != nil {
 			ui.Fatal("%v", err)
 		}
 
-		ui.Info("Starting %s", p.Name)
 		d := discovery.New(cfg.IPFSDir(), cfg.Ports.IPFS)
 		if err := d.Start(ctx); err != nil {
 			ui.Fatal("Failed to initialize discovery: %v", err)
 		}
 		defer d.Stop()
 
+		p, genesis, err := d.Join(ctx, chainID, cfg.ManifestPath())
+		if err != nil {
+			ui.Fatal("Unable to retrieve network information for %q: %v", chainID, err)
+		}
+
 		n := node.New(cfg, d)
 		errCh := make(chan error)
 		go func() {
 			defer close(errCh)
-			errCh <- n.Start(ctx, p, nil)
+			errCh <- n.Start(ctx, p, genesis)
 		}()
 
 		// Wait for the application to error out or the user to quit.
@@ -68,7 +77,5 @@ var startCmd = &cobra.Command{
 }
 
 func init() {
-	startCmd.Flags().String("cwd", ".", "specifies the current working directory")
-
-	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(joinCmd)
 }

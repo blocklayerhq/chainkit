@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blocklayerhq/chainkit/config"
 	"github.com/blocklayerhq/chainkit/discovery"
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/util"
@@ -15,18 +16,18 @@ import (
 )
 
 type server struct {
-	p     *project.Project
-	errCh chan error
-	rpc   *client.HTTP
+	config *config.Config
+	errCh  chan error
+	rpc    *client.HTTP
 }
 
-func newServer(p *project.Project) *server {
+func newServer(config *config.Config) *server {
 	return &server{
-		p:     p,
-		errCh: make(chan error),
+		config: config,
+		errCh:  make(chan error),
 		rpc: client.NewHTTP(
-			fmt.Sprintf("http://localhost:%d", p.Ports.TendermintRPC),
-			fmt.Sprintf("http://localhost:%d/websocket", p.Ports.TendermintRPC),
+			fmt.Sprintf("http://localhost:%d", config.Ports.TendermintRPC),
+			fmt.Sprintf("http://localhost:%d/websocket", config.Ports.TendermintRPC),
 		),
 	}
 }
@@ -47,18 +48,11 @@ func (s *server) waitReady(ctx context.Context) error {
 }
 
 // start starts the server and returns when it's up and running.
-func (s *server) start(ctx context.Context) error {
+func (s *server) start(ctx context.Context, p *project.Project) error {
 	// Spin the server on the background.
 	go func() {
 		defer close(s.errCh)
-		// TODO: Leaving disabled for now as it helps finding leaks.
-		// defer func() {
-		// 	// Failsafe: Sometimes, if we stop a `docker run --rm`, it will leave
-		// 	// the container behind.
-		// 	util.Run(ctx, "docker", "rm", "-f", p.Name)
-		// }()
-
-		s.errCh <- util.DockerRun(ctx, s.p, "start")
+		s.errCh <- util.DockerRun(ctx, s.config, p, "start")
 	}()
 
 	// Wait for the server to be ready.
@@ -95,7 +89,7 @@ func (s *server) peerInfo(ctx context.Context) (*discovery.PeerInfo, error) {
 
 	return &discovery.PeerInfo{
 		NodeID:            string(status.NodeInfo.ID),
-		TendermintP2PPort: s.p.Ports.TendermintP2P,
+		TendermintP2PPort: s.config.Ports.TendermintP2P,
 	}, nil
 }
 
@@ -110,7 +104,7 @@ func (s *server) dialSeeds(ctx context.Context, peer *discovery.PeerInfo) error 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET",
 		fmt.Sprintf("http://localhost:%d/dial_seeds?seeds=%s",
-			s.p.Ports.TendermintRPC,
+			s.config.Ports.TendermintRPC,
 			url.QueryEscape(seedString),
 		),
 		nil)

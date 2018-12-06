@@ -11,12 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/blocklayerhq/chainkit/config"
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
 )
 
 // DockerRun runs a command within the project's container.
-func DockerRun(ctx context.Context, p *project.Project, args ...string) error {
+func DockerRun(ctx context.Context, config *config.Config, p *project.Project, args ...string) error {
 	var (
 		daemonDirContainer = path.Join("/", "root", "."+p.Binaries.Daemon)
 		cliDirContainer    = path.Join("/", "root", "."+p.Binaries.CLI)
@@ -24,11 +25,10 @@ func DockerRun(ctx context.Context, p *project.Project, args ...string) error {
 
 	cmd := []string{
 		"run", "--rm",
-		"-p", fmt.Sprintf("%d:26656", p.Ports.TendermintP2P),
-		"-p", fmt.Sprintf("%d:26657", p.Ports.TendermintRPC),
-		"-v", p.StateDir() + ":" + daemonDirContainer,
-		"-v", p.CLIDir() + ":" + cliDirContainer,
-		"--name", p.Image,
+		"-p", fmt.Sprintf("%d:26656", config.Ports.TendermintP2P),
+		"-p", fmt.Sprintf("%d:26657", config.Ports.TendermintRPC),
+		"-v", config.StateDir() + ":" + daemonDirContainer,
+		"-v", config.CLIDir() + ":" + cliDirContainer,
 		p.Image + ":latest",
 		p.Binaries.Daemon,
 	}
