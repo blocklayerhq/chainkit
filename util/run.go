@@ -18,6 +18,11 @@ import (
 
 // DockerRun runs a command within the project's container.
 func DockerRun(ctx context.Context, config *config.Config, p *project.Project, args ...string) error {
+	return DockerRunWithFD(ctx, config, p, os.Stdin, os.Stdout, os.Stderr, args...)
+}
+
+// DockerRunWithFD is like DockerRun but accepts stdin/stdout/stderr.
+func DockerRunWithFD(ctx context.Context, config *config.Config, p *project.Project, stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
 	var (
 		daemonDirContainer = path.Join("/", "root", "."+p.Binaries.Daemon)
 		cliDirContainer    = path.Join("/", "root", "."+p.Binaries.CLI)
@@ -34,7 +39,7 @@ func DockerRun(ctx context.Context, config *config.Config, p *project.Project, a
 	}
 	cmd = append(cmd, args...)
 
-	return Run(ctx, "docker", cmd...)
+	return RunWithFD(ctx, stdin, stdout, stderr, "docker", cmd...)
 }
 
 // Run runs a system command.

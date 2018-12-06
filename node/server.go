@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/blocklayerhq/chainkit/discovery"
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/util"
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/rpc/client"
 )
 
@@ -49,10 +51,15 @@ func (s *server) waitReady(ctx context.Context) error {
 
 // start starts the server and returns when it's up and running.
 func (s *server) start(ctx context.Context, p *project.Project) error {
+	logFile, err := os.OpenFile(s.config.LogFile(), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return errors.Wrap(err, "unable to open log file")
+	}
+
 	// Spin the server on the background.
 	go func() {
 		defer close(s.errCh)
-		s.errCh <- util.DockerRun(ctx, s.config, p, "start")
+		s.errCh <- util.DockerRunWithFD(ctx, s.config, p, os.Stdin, logFile, os.Stderr, "start")
 	}()
 
 	// Wait for the server to be ready.

@@ -2,22 +2,17 @@ package config
 
 import (
 	"path"
-	"path/filepath"
 )
 
 // Config represents the node configuration.
 type Config struct {
 	RootDir string
-	Ports   *PortMapper `yaml:"-"`
+	Ports   *PortMapper
 }
 
 // StateDir returns the state directory within the project.
 func (c *Config) StateDir() string {
-	r, err := filepath.Abs(c.RootDir)
-	if err != nil {
-		r = c.RootDir
-	}
-	return path.Join(r, "state")
+	return path.Join(c.RootDir, "state")
 }
 
 // LogFile returns the log file path
@@ -35,9 +30,8 @@ func (c *Config) ConfigDir() string {
 	return path.Join(c.StateDir(), "config")
 }
 
-// ConfigFile returns the path of the configuration file.
-// TODO: Should be called ConfigPath.
-func (c *Config) ConfigFile() string {
+// ConfigPath returns the path of the configuration file.
+func (c *Config) ConfigPath() string {
 	return path.Join(c.ConfigDir(), "config.toml")
 }
 

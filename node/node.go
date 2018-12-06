@@ -102,6 +102,7 @@ func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) er
 	})
 
 	ui.Success("Node is up and running:     %s", peer.NodeID)
+	ui.Info("    Logs can be found in: %s", n.config.LogFile())
 	ui.Success("Application is live at:     %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/", n.config.Ports.TendermintRPC)))
 	ui.Success("Cosmos Explorer is live at: %s", ui.Emphasize(fmt.Sprintf("http://localhost:%d/?rpc_port=%d", n.config.Ports.Explorer, n.config.Ports.TendermintRPC)))
 
@@ -121,7 +122,7 @@ func (n *Node) init(ctx context.Context, p *project.Project, genesis []byte) err
 	}
 
 	err = updateConfig(
-		n.config.ConfigFile(),
+		n.config.ConfigPath(),
 		map[string]string{
 			// Set custom moniker. Needed to join nodes together.
 			"moniker": fmt.Sprintf("%q", moniker),
@@ -129,8 +130,6 @@ func (n *Node) init(ctx context.Context, p *project.Project, genesis []byte) err
 			"addr_book_strict": "false",
 			// Needed to enable dial_seeds
 			"unsafe": "true",
-			// Info logs are just too verbose.
-			"log_level": fmt.Sprintf("%q", "*:error"),
 		},
 	)
 	if err != nil {

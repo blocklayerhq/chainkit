@@ -331,7 +331,6 @@ func (s *Server) SearchPeers(ctx context.Context, chainID string) (<-chan *PeerI
 			if p.ID != s.node.PeerHost.ID() && len(p.Addrs) > 0 {
 				stream, err := s.node.PeerHost.NewStream(ctx, p.ID, "/chainkit/0.1.0")
 				if err != nil {
-					ui.Error("unable to make stream: %v", err)
 					continue
 				}
 				dec := json.NewDecoder(stream)
