@@ -8,12 +8,29 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/user"
+	"path"
 	"strings"
 
 	"github.com/blocklayerhq/chainkit/project"
 	"github.com/blocklayerhq/chainkit/ui"
 	"github.com/blocklayerhq/chainkit/util"
+	"github.com/pkg/errors"
 )
+
+func fixFsPermissions(ctx context.Context, p *project.Project) error {
+	u, err := user.Current()
+	if err != nil {
+		return errors.Wrap(err, "Cannot get user id")
+	}
+	daemonDir := path.Join("/", "root", "."+p.Binaries.Daemon)
+	cliDir := path.Join("/", "root", "."+p.Binaries.CLI)
+	cmd := fmt.Sprintf("chown -R %s:%s %s %s", u.Uid, u.Gid, daemonDir, cliDir)
+	if err := util.DockerRun(ctx, p, cmd); err != nil {
+		return errors.Wrap(err, "Cannot change directories permissions")
+	}
+	return nil
+}
 
 func initialize(ctx context.Context, p *project.Project) error {
 	_, err := os.Stat(p.StateDir())
@@ -41,8 +58,12 @@ func initialize(ctx context.Context, p *project.Project) error {
 		}
 	}
 
-	if err := ui.Tree(p.StateDir(), nil); err != nil {
+	if err := fixFsPermissions(ctx, p); err != nil {
 		return err
+	}
+
+	if err := ui.Tree(p.StateDir(), nil); err != nil {
+		return errors.Wrap(err, "Cannot print source tree")
 	}
 
 	return nil
