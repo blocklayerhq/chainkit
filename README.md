@@ -10,6 +10,10 @@ Key features:
 - **Build and Run**: Under the hood, *chainkit* packages your app in a *Docker* container.
 - **Testnet**: Anyone in the world can join your network by running one command. Under the hood, *chainkit* uses [IPFS](https://ipfs.io/) and [libp2p](https://libp2p.io/) to share data and discover peers.
 
+<p align='center'>
+    <img src='./script/screencast/screencast.svg' width='600' alt='chainkit demo'>
+</p>
+
 ## Installing
 
 Requirements:
