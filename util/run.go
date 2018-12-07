@@ -4,14 +4,17 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/blocklayerhq/chainkit/config"
 	"github.com/blocklayerhq/chainkit/project"
+	"github.com/blocklayerhq/chainkit/ui"
 )
 
 // DockerRun runs a command within the project's container.
@@ -38,6 +41,27 @@ func DockerRunWithFD(ctx context.Context, config *config.Config, p *project.Proj
 	cmd = append(cmd, args...)
 
 	return RunWithFD(ctx, stdin, stdout, stderr, "docker", cmd...)
+}
+
+// DockerLoad loads an image into docker from an io.Reader
+func DockerLoad(ctx context.Context, image io.Reader) error {
+	errCh := make(chan error)
+	go func() {
+		defer close(errCh)
+		errCh <- RunWithFD(ctx, image, ioutil.Discard, ioutil.Discard, "docker", "load", "-q")
+	}()
+
+	msg := "Loading image"
+
+	ui.Live(msg)
+	for i := 0; ; i++ {
+		select {
+		case err := <-errCh:
+			return err
+		case <-time.After(200 * time.Millisecond):
+			ui.Live(msg + strings.Repeat(".", i%4))
+		}
+	}
 }
 
 // Run runs a system command.

@@ -216,7 +216,7 @@ func (s *Server) Join(ctx context.Context, chainID, manifestPath string) (*proje
 		return nil, nil, errors.Wrap(err, "unable to write manifest")
 	}
 
-	if err := util.RunWithFD(ctx, image, os.Stdout, os.Stderr, "docker", "load"); err != nil {
+	if err := util.DockerLoad(ctx, image); err != nil {
 		return nil, nil, errors.Wrap(err, "unable to load image")
 	}
 

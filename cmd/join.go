@@ -47,6 +47,7 @@ var joinCmd = &cobra.Command{
 		}
 		defer d.Stop()
 
+		ui.Info("Retrieving network information...")
 		p, genesis, err := d.Join(ctx, cfg.ChainID, cfg.ManifestPath())
 		if err != nil {
 			ui.Fatal("Unable to retrieve network information for %q: %v", cfg.ChainID, err)
