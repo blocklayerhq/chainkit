@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 TMP_DIR=/tmp/chainkit-integration-tests
 PROJECT_NAME=foo
 CMD=""
@@ -31,33 +33,34 @@ test_build() {
 test_start() {
     $CMD start --cwd $PROJECT_NAME > chainkit-start.log 2>&1 &
     # Give some time for the chain to start
-    sleep 5
-    tail chainkit-start.log
-    curl -I -X GET --fail http://localhost:42001
+    curl -s -I \
+        --retry 20 \
+        --retry-delay 2 \
+        --retry-connrefused \
+        -X GET http://localhost:42001 | grep '200 OK' || \
+        ( tail -n 20 chainkit-start.log && false )
 }
 
 cleanup() {
-    docker rm -f chainkit-$PROJECT_NAME
-    docker rmi chainkit-$PROJECT_NAME
+    rm -rf $TMP_DIR 2>/dev/null || true
+    docker rm -f chainkit-$PROJECT_NAME 2>/dev/null || true
+    docker rmi chainkit-$PROJECT_NAME 2>/dev/null || true
 }
 
 run_tests() {
     CMD="$1"
     # clear-up tmp-dir if exists
-    rm -rf $TMP_DIR
+    cleanup
     mkdir -p ${TMP_DIR}/src
     (
         cd ${TMP_DIR}/src
         export GOPATH=$TMP_DIR
-        set -e
         set -x
         test_create
         test_build
         test_start
-        set +x
-        set +e
-        cleanup
     )
+    cleanup
 }
 
 [ -z "$1" ] && {

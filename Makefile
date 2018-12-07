@@ -28,5 +28,5 @@ lint:
 		-E gofmt -E vet -E goimports -E golint ./...
 
 .PHONY: test
-test:
-	go test -v ./...
+test: build
+	./test/integration.sh $(CURDIR)/chainkit
