@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"time"
 
 	"github.com/blocklayerhq/chainkit/project"
@@ -190,7 +189,7 @@ func (s *Server) Publish(ctx context.Context, manifestPath, genesisPath, imagePa
 		return "", err
 	}
 
-	return p.String(), nil
+	return p.Cid().String(), nil
 }
 
 // Join joins a network.
@@ -230,7 +229,7 @@ func (s *Server) Join(ctx context.Context, chainID, manifestPath string) (*proje
 
 // Join joins a network.
 func (s *Server) getNetworkMetadata(ctx context.Context, chainID string) (io.ReadCloser, io.ReadCloser, io.ReadCloser, error) {
-	manifestPath, err := iface.ParsePath(path.Join(chainID, "chainkit.yml"))
+	manifestPath, err := iface.ParsePath(path.Join("/ipfs", chainID, "chainkit.yml"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -239,7 +238,7 @@ func (s *Server) getNetworkMetadata(ctx context.Context, chainID string) (io.Rea
 		return nil, nil, nil, err
 	}
 
-	genesisPath, err := iface.ParsePath(path.Join(chainID, "genesis.json"))
+	genesisPath, err := iface.ParsePath(path.Join("/ipfs", chainID, "genesis.json"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -248,7 +247,7 @@ func (s *Server) getNetworkMetadata(ctx context.Context, chainID string) (io.Rea
 		return nil, nil, nil, err
 	}
 
-	imagePath, err := iface.ParsePath(path.Join(chainID, "image.tgz"))
+	imagePath, err := iface.ParsePath(path.Join("/ipfs", chainID, "image.tgz"))
 	imageFile, err := s.api.Unixfs().Get(ctx, imagePath)
 	if err != nil {
 		return nil, nil, nil, err
@@ -262,7 +261,7 @@ func (s *Server) Announce(ctx context.Context, chainID string, peer *PeerInfo) e
 	// Wait for the DHT to be connected before searching.
 	<-s.connectedCh
 
-	id, err := cid.Decode(filepath.Base(chainID))
+	id, err := cid.Decode(chainID)
 	if err != nil {
 		return err
 	}
@@ -289,7 +288,7 @@ func (s *Server) Peers(ctx context.Context, chainID string) (<-chan *PeerInfo, e
 	// Wait for the DHT to be connected before searching.
 	<-s.connectedCh
 
-	id, err := cid.Decode(filepath.Base(chainID))
+	id, err := cid.Decode(chainID)
 	if err != nil {
 		return nil, err
 	}
