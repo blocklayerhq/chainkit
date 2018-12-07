@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-CHAINKIT=/Users/al/go/src/github.com/blocklayerhq/chainkit/chainkit
+ROOTDIR="$(cd "$(dirname "$0")"; pwd -P)/"
+CHAINKIT="$ROOTDIR/../../chainkit"
 
 rm -rf ~/go/src/github.com/demoapp
 cd ~/go/src/github.com

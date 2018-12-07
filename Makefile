@@ -30,3 +30,7 @@ lint:
 .PHONY: test
 test: build
 	./test/integration.sh $(CURDIR)/chainkit
+
+.PHONY: screencast
+screencast:
+	./script/screencast/record.sh

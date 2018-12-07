@@ -1,14 +1,16 @@
 #!/bin/bash
 set -e
 
+ROOTDIR="$(cd "$(dirname "$0")"; pwd -P)/"
+
 # Dependencies:
 # brew install asciinema
 # yarn global add svg-term-cli
 
-rm -f "$(dirname $0)/screencast.json" "$(dirname $0)/screencast.svg"
+rm -f "$ROOTDIR/screencast.json" "$ROOTDIR/screencast.svg"
 
-asciinema rec --command 'sh "$(dirname $0)/script.sh"' "$(dirname $0)/screencast.json"
-sed -i.bak "s;$HOME;~;g" screencast.json
-rm -f "$(dirname $0)/screencast.json.bak"
+asciinema rec --command "sh $ROOTDIR/script.sh" "$ROOTDIR/screencast.json"
+sed -i.bak "s;$HOME;~;g" "$ROOTDIR/screencast.json"
+rm -f "$ROOTDIR/screencast.json.bak"
 
-svg-term --window --in "$(dirname $0)/screencast.json" --out "$(dirname $0)/screencast.svg"
+svg-term --window --in "$ROOTDIR/screencast.json" --out "$ROOTDIR/screencast.svg"
