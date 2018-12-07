@@ -30,15 +30,22 @@ test_build() {
     )
 }
 
+# Retry a command for 10 sec
+retry() {
+    for i in $(seq 1 5) ; do
+        ( $($1) && return ) || true
+        sleep 2
+    done
+    # On failure, run the second command
+    $($2)
+    false
+}
+
 test_start() {
     $CMD start --cwd $PROJECT_NAME > chainkit-start.log 2>&1 &
     # Give some time for the chain to start
-    curl -s -I \
-        --retry 20 \
-        --retry-delay 2 \
-        --retry-connrefused \
-        -X GET http://localhost:42001 | grep '200 OK' || \
-        ( tail -n 20 chainkit-start.log && false )
+    retry "curl -s -I -X GET http://localhost:42001 | grep '200 OK'" \
+        "tail -n 20 chainkit-start.log"
 }
 
 cleanup() {
