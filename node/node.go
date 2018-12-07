@@ -65,7 +65,7 @@ func (n *Node) Start(ctx context.Context, p *project.Project, genesis []byte) er
 		if err != nil {
 			return err
 		}
-		ui.Success("Success! Published network %s as %s\n\nOther nodes can now join this network by running\n  %s\n",
+		ui.Success("Success! Published network %s as %s\n\nOther nodes can now join this network by running:\n  %s\n",
 			ui.Emphasize(p.Name),
 			ui.Emphasize(chainID),
 			ui.Emphasize(fmt.Sprintf("chainkit join %s", chainID)),
@@ -170,7 +170,7 @@ func (n *Node) createNetwork(ctx context.Context, p *project.Project) (string, e
 }
 
 func (n *Node) announce(ctx context.Context, chainID string, peer *discovery.PeerInfo) error {
-	ui.Info("Registering this node on the network...")
+	ui.Info("Registering this node with the network...")
 	for {
 		select {
 		case <-ctx.Done():

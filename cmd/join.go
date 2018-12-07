@@ -48,16 +48,23 @@ var joinCmd = &cobra.Command{
 		defer d.Stop()
 
 		ui.Info("Retrieving network information...")
-		p, genesis, err := d.Join(ctx, cfg.ChainID, cfg.ManifestPath())
+		network, err := d.Join(ctx, cfg.ChainID)
 		if err != nil {
 			ui.Fatal("Unable to retrieve network information for %q: %v", cfg.ChainID, err)
+		}
+		if err := network.WriteManifest(cfg.ManifestPath()); err != nil {
+			ui.Fatal("%v", err)
+		}
+		p, err := network.Project()
+		if err != nil {
+			ui.Fatal("%v", err)
 		}
 
 		n := node.New(cfg, d)
 		errCh := make(chan error)
 		go func() {
 			defer close(errCh)
-			errCh <- n.Start(ctx, p, genesis)
+			errCh <- n.Start(ctx, p, network.Genesis)
 		}()
 
 		// Wait for the application to error out or the user to quit.

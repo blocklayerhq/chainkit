@@ -2,7 +2,7 @@ package project
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
 
@@ -76,14 +76,12 @@ func (p *Project) Validate() error {
 }
 
 // Parse parses a manifest.
-func Parse(path string) (*Project, error) {
+func Parse(r io.Reader) (*Project, error) {
 	errMsg := fmt.Sprintf("Cannot read manifest %q", manifestFile)
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, errors.Wrap(err, errMsg)
-	}
+
+	dec := yaml.NewDecoder(r)
 	p := &Project{}
-	if err = yaml.Unmarshal(data, p); err != nil {
+	if err := dec.Decode(p); err != nil {
 		return nil, errors.Wrap(err, errMsg)
 	}
 
@@ -96,5 +94,10 @@ func Parse(path string) (*Project, error) {
 
 // Load will load a project from a given directory
 func Load(dir string) (*Project, error) {
-	return Parse(path.Join(dir, manifestFile))
+	f, err := os.Open(path.Join(dir, manifestFile))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to open manifest: %v")
+	}
+	defer f.Close()
+	return Parse(f)
 }
