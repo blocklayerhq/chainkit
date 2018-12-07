@@ -31,7 +31,7 @@ test_build() {
 test_start() {
     $CMD start --cwd $PROJECT_NAME > chainkit-start.log 2>&1 &
     # Give some time for the chain to start
-    sleep 3
+    sleep 5
     tail chainkit-start.log
     curl -I -X GET --fail http://localhost:42001
 }
