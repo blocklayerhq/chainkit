@@ -35,7 +35,7 @@ var buildCmd = &cobra.Command{
 			Verbose: verbose,
 			NoCache: noCache,
 		}
-		ui.Info("Building %s", p.Name)
+		ui.Info("Building %s", ui.Emphasize(p.Name))
 		if err := b.Build(ctx, opts); err != nil {
 			ui.Fatal("Failed to build the application: %v", err)
 		}

@@ -53,7 +53,7 @@ func create(rootDir string, p *project.Project) {
 		ui.Fatal("Failed to initialize: %v", err)
 	}
 
-	ui.Info("Building %s", p.Name)
+	ui.Info("Building %s", ui.Emphasize(p.Name))
 	b := builder.New(rootDir, p.Image)
 	if err := b.Build(ctx, builder.BuildOpts{}); err != nil {
 		ui.Fatal("Failed to build the application: %v", err)

@@ -30,7 +30,7 @@ var joinCmd = &cobra.Command{
 			chainID = args[0]
 		)
 
-		ui.Info("Joining network %s", chainID)
+		ui.Info("Joining network %s", ui.Emphasize(chainID))
 		cfg := &config.Config{
 			RootDir:        path.Join(networksDir, filepath.Base(chainID)),
 			PublishNetwork: false,

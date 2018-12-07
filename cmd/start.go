@@ -42,7 +42,7 @@ var startCmd = &cobra.Command{
 			ui.Fatal("%v", err)
 		}
 
-		ui.Info("Starting %s", p.Name)
+		ui.Info("Starting %s", ui.Emphasize(p.Name))
 
 		d := discovery.New(cfg.IPFSDir(), cfg.Ports.IPFS)
 		if err := d.Start(ctx); err != nil {
