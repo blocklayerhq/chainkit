@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -eE
 
 TMP_DIR=/tmp/chainkit-integration-tests
 PROJECT_NAME=foo
@@ -30,34 +30,39 @@ test_build() {
     )
 }
 
-# Retry a command for 10 sec
-retry() {
-    for i in $(seq 1 5) ; do
-        ( $($1) && return ) || true
-        sleep 2
-    done
-    # On failure, run the second command
-    $($2)
-    false
-}
-
 test_start() {
     $CMD start --cwd $PROJECT_NAME > chainkit-start.log 2>&1 &
     # Give some time for the chain to start
-    retry "curl -s -I -X GET http://localhost:42001 | grep '200 OK'" \
-        "tail -n 20 chainkit-start.log"
+    retry "curl -s -I -X GET http://localhost:42001 | grep '200 OK'"
+}
+
+# Retry a command for 20 sec
+retry() {
+    for i in $(seq 1 5) ; do
+        eval "$1" && return || true
+        sleep 4
+    done
+    false
 }
 
 cleanup() {
+    docker ps -aq | xargs docker rm -f || true
+    docker rmi chainkit-$PROJECT_NAME || true
     rm -rf $TMP_DIR 2>/dev/null || true
-    docker rm -f chainkit-$PROJECT_NAME 2>/dev/null || true
-    docker rmi chainkit-$PROJECT_NAME 2>/dev/null || true
+}
+
+show_logs() {
+    (
+        cd ${TMP_DIR}/src
+        tail -n 50 chainkit-start.log
+    )
 }
 
 run_tests() {
     CMD="$1"
     # clear-up tmp-dir if exists
     cleanup
+    trap show_logs ERR SIGHUP SIGINT SIGTERM
     mkdir -p ${TMP_DIR}/src
     (
         cd ${TMP_DIR}/src
