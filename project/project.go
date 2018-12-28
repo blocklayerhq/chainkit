@@ -96,7 +96,7 @@ func Parse(r io.Reader) (*Project, error) {
 func Load(dir string) (*Project, error) {
 	f, err := os.Open(path.Join(dir, manifestFile))
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to open manifest: %v")
+		return nil, errors.Wrap(err, "Cannot find manifest (is it a chainkit project?)")
 	}
 	defer f.Close()
 	return Parse(f)
