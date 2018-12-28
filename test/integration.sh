@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eE
 
@@ -46,7 +46,7 @@ test_cli() {
 test_explorer() {
     # Test if the explorer container is running
     retry '[ ! -z $(docker ps -qf label=chainkit.cosmos.explorer) ]'
-    retry 'curl -X GET -I --fail-early http://localhost:42000'
+    retry 'curl -X GET -I http://localhost:42000'
 }
 
 # Retry a command for 20 sec
