@@ -36,6 +36,13 @@ test_start() {
     retry "curl -s -I -X GET http://localhost:42001 | grep '200 OK'"
 }
 
+test_cli() {
+    (
+        cd $PROJECT_NAME
+        $CMD cli status
+    )
+}
+
 # Retry a command for 20 sec
 retry() {
     for i in $(seq 1 5) ; do
@@ -71,6 +78,7 @@ run_tests() {
         test_create
         test_build
         test_start
+        test_cli
     )
     cleanup
 }
