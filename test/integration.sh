@@ -43,6 +43,12 @@ test_cli() {
     )
 }
 
+test_explorer() {
+    # Test if the explorer container is running
+    [ ! -z $(docker ps -qf label=chainkit.cosmos.explorer) ]
+    curl -X GET -I --fail-early http://localhost:42000
+}
+
 # Retry a command for 20 sec
 retry() {
     for i in $(seq 1 5) ; do
@@ -79,6 +85,7 @@ run_tests() {
         test_build
         test_start
         test_cli
+        test_explorer
     )
     cleanup
 }
