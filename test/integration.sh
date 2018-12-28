@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eE
 
@@ -36,6 +36,19 @@ test_start() {
     retry "curl -s -I -X GET http://localhost:42001 | grep '200 OK'"
 }
 
+test_cli() {
+    (
+        cd $PROJECT_NAME
+        $CMD cli status
+    )
+}
+
+test_explorer() {
+    # Test if the explorer container is running
+    retry '[ ! -z $(docker ps -qf label=chainkit.cosmos.explorer) ]'
+    retry 'curl -X GET -I http://localhost:42000'
+}
+
 # Retry a command for 20 sec
 retry() {
     for i in $(seq 1 5) ; do
@@ -46,8 +59,9 @@ retry() {
 }
 
 cleanup() {
-    docker ps -aq | xargs docker rm -f || true
-    docker rmi chainkit-$PROJECT_NAME || true
+    echo "Cleaning up..."
+    docker ps -aq -f "label=chainkit.project=$PROJECT_NAME" | xargs docker rm -f || true
+    docker rmi "chainkit-$PROJECT_NAME" || true
     rm -rf $TMP_DIR 2>/dev/null || true
 }
 
@@ -71,7 +85,10 @@ run_tests() {
         test_create
         test_build
         test_start
+        test_cli
+        test_explorer
     )
+    echo "All tests passed!"
     cleanup
 }
 
