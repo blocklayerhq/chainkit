@@ -17,6 +17,7 @@ func startExplorer(ctx context.Context, config *config.Config, p *project.Projec
 	cmd := []string{
 		"run", "--rm",
 		"-p", fmt.Sprintf("%d:8080", config.Ports.Explorer),
+		"-l", "chainkit.cosmos.explorer",
 		explorerImage,
 	}
 	if err := util.Run(ctx, "docker", cmd...); err != nil {
