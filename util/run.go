@@ -35,6 +35,8 @@ func DockerRunWithFD(ctx context.Context, config *config.Config, p *project.Proj
 		"-p", fmt.Sprintf("%d:26657", config.Ports.TendermintRPC),
 		"-v", config.StateDir() + ":" + daemonDirContainer,
 		"-v", config.CLIDir() + ":" + cliDirContainer,
+		"-l", "chainkit.cosmos.daemon",
+		"-l", "chainkit.project=" + p.Name,
 		p.Image + ":latest",
 		p.Binaries.Daemon,
 	}
