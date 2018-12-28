@@ -45,8 +45,8 @@ test_cli() {
 
 test_explorer() {
     # Test if the explorer container is running
-    [ ! -z $(docker ps -qf label=chainkit.cosmos.explorer) ]
-    curl -X GET -I --fail-early http://localhost:42000
+    retry '[ ! -z $(docker ps -qf label=chainkit.cosmos.explorer) ]'
+    retry 'curl -X GET -I --fail-early http://localhost:42000'
 }
 
 # Retry a command for 20 sec
@@ -59,8 +59,9 @@ retry() {
 }
 
 cleanup() {
-    docker ps -aq | xargs docker rm -f || true
-    docker rmi chainkit-$PROJECT_NAME || true
+    echo "Cleaning up..."
+    docker ps -aq -f "label=chainkit.project=$PROJECT_NAME" | xargs docker rm -f || true
+    docker rmi "chainkit-$PROJECT_NAME" || true
     rm -rf $TMP_DIR 2>/dev/null || true
 }
 
@@ -87,6 +88,7 @@ run_tests() {
         test_cli
         test_explorer
     )
+    echo "All tests passed!"
     cleanup
 }
 
