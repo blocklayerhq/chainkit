@@ -34,8 +34,9 @@ func init() {
 
 func getContainerID(ctx context.Context, p *project.Project) string {
 	cmd := []string{
-		"ps", "-qf",
-		"label=chainkit.project=" + p.Name,
+		"ps", "-q",
+		"-f", "label=chainkit.cosmos.daemon",
+		"-f", "label=chainkit.project=" + p.Name,
 	}
 	var b bytes.Buffer
 	bwriter := bufio.NewWriter(&b)
