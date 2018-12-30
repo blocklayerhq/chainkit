@@ -51,16 +51,16 @@ CMD=""
 
 6_test_join() {
     # Check that the first node is successfully registered on the network
-    retry 3 30 'grep "Node successfully registered" chainkit-start.log'
+    retry 3 10 'grep "Node successfully registered" chainkit-start.log'
     network_id=$(grep 'chainkit join' chainkit-start.log | awk '{print $3}')
     [ ! -z "$network_id" ]
     $CMD join $network_id > chainkit-join.log 2>&1 &
     # Check that we discovered the first node
-    retry 3 30 'grep "Discovered node " chainkit-join.log'
+    retry 3 40 'grep "Discovered node " chainkit-join.log'
     # Check that our node id has been spotted in the first node's log
     node_id=$(grep 'Node ID' chainkit-join.log | awk '{print $5}')
     [ ! -z "$node_id" ]
-    retry 3 30 'grep "Discovered node $node_id" chainkit-start.log'
+    retry 3 40 'grep "Discovered node $node_id" chainkit-start.log'
     # The 2nd application should be live on port 42011 (port allocation)
     curl -s -I -X GET http://localhost:42011 | grep '200 OK'
 }
