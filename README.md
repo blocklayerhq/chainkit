@@ -42,7 +42,19 @@ $ cd demoapp
 $ chainkit start
 ```
 
-Then open [http://localhost:42001/](http://localhost:42001/) to see *Tendermint*'s RPC interface.
+Then open [http://localhost:42001/](http://localhost:42001/) to see *Tendermint*'s RPC interface
+or open the [Explorer url](http://localhost:42000/?rpc_port=42001).
+
+You can also access the CLI:
+If chainkit is running in the current terminal, go to a new one and go to chainkit's
+project directory.
+```bash
+$ cd demoapp
+$ chainkit cli --help
+$ chainkit cli status
+```
+
+All CLI commands usually accessible from a Cosmos-SDK application is available in the same way via `chainkit cli ...`.
 
 ### Testnet
 
