@@ -17,8 +17,8 @@ Key features:
 ## Installing
 
 Requirements:
--   Go 1.11 or higher
--   A [working golang](https://golang.org/doc/code.html) environment
+- Go 1.11 or higher and a [working golang](https://golang.org/doc/code.html) environment
+- [Docker](https://docs.docker.com/install/)
 
 From this repository, run:
 ```bash
