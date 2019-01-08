@@ -58,10 +58,14 @@ All CLI commands usually accessible from a Cosmos-SDK application is available i
 
 ### Testnet
 
-Anyone in the world can join your network by running:
+Anyone in the world can join your network. They'll need to run:
+
 ```bash
+$ chainkit create demoapp
 $ chainkit join <network ID>
 ```
+
+where `<network ID>` is found in the output from starting the first node, or, for a mainnet, published by the network operator.
 
 Under the hood, *chainkit* uses [IPFS](https://ipfs.io/) to transfer your network's manifest, genesis file and Docker image between nodes.
 
