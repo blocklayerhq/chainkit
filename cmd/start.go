@@ -30,6 +30,15 @@ var startCmd = &cobra.Command{
 			ui.Fatal("unable to parse --join flag: %v", err)
 		}
 
+		editGenesis, err := cmd.Flags().GetBool("edit-genesis")
+		if err != nil {
+			ui.Fatal("unable to parse --edit-genesis: %v", err)
+		}
+
+		if editGenesis == true && chainID != "" {
+			ui.Fatal("both options --join and --edit-genesis cannot be combined")
+		}
+
 		ctx := context.Background()
 		cfg := &config.Config{
 			RootDir:        rootDir,
@@ -71,7 +80,7 @@ var startCmd = &cobra.Command{
 			if network != nil {
 				genesis = network.Genesis
 			}
-			errCh <- n.Start(ctx, p, genesis)
+			errCh <- n.Start(ctx, p, genesis, editGenesis)
 		}()
 
 		// Wait for the application to error out or the user to quit.
@@ -96,6 +105,7 @@ var startCmd = &cobra.Command{
 func init() {
 	startCmd.Flags().String("cwd", ".", "specifies the current working directory")
 	startCmd.Flags().String("join", "", "join a network")
+	startCmd.Flags().Bool("edit-genesis", false, "spawns an editor to change the genesis file before the chain starts (only works if the chain hasn't been initialized)")
 
 	rootCmd.AddCommand(startCmd)
 }

@@ -64,7 +64,7 @@ var joinCmd = &cobra.Command{
 		errCh := make(chan error)
 		go func() {
 			defer close(errCh)
-			errCh <- n.Start(ctx, p, network.Genesis)
+			errCh <- n.Start(ctx, p, network.Genesis, false)
 		}()
 
 		// Wait for the application to error out or the user to quit.

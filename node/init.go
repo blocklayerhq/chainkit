@@ -19,11 +19,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func initialize(ctx context.Context, config *config.Config, p *project.Project) error {
+func initialize(ctx context.Context, config *config.Config, p *project.Project, editGenesis bool) error {
 	_, err := os.Stat(config.GenesisPath())
 
 	// Skip initialization if already initialized.
 	if err == nil {
+		if editGenesis == true {
+			return errors.New("cannot use the option \"--edit-genesis\": the chain is already initialized")
+		}
 		return nil
 	}
 
@@ -47,6 +50,13 @@ func initialize(ctx context.Context, config *config.Config, p *project.Project) 
 
 	if err := fixFsPermissions(ctx, config, p); err != nil {
 		return err
+	}
+
+	if editGenesis == true {
+		ui.Info("Spawning text editor to change the genesis file before the chain starts")
+		if err := spawnGenesisEditor(ctx, config.GenesisPath()); err != nil {
+			return errors.Wrap(err, "Cannot edit the genesis file")
+		}
 	}
 
 	if err := ui.Tree(config.StateDir(), []string{"ipfs"}); err != nil {
