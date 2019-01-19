@@ -75,3 +75,11 @@
 [[constraint]]
   branch = "master"
   name = "golang.org/x/sync"
+
+[[constraint]]
+  name = "github.com/sergi/go-diff"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/manifoldco/promptui"
+  version = "0.3.2"
