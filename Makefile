@@ -8,6 +8,10 @@ all: build
 build: generate
 	CGO_ENABLED=0 go build -v ${GO_LDFLAGS}
 
+.PHONY: install
+install: build
+	cp chainkit /usr/local/bin
+
 .PHONY: generate
 generate:
 	go generate ./templates
