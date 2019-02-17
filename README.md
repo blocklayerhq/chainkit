@@ -56,6 +56,19 @@ $ chainkit cli status
 
 All CLI commands usually accessible from a Cosmos-SDK application is available in the same way via `chainkit cli ...`.
 
+### Edit the genesis file before the chain starts
+
+It may be useful to edit the genesis file before the chain starts: either to add new accounts with funds or to add more validators. In order to do so, use the following command:
+
+```bash
+$ cd demoapp
+$ chainkit start --edit-genesis
+```
+
+It'll spawn an editor (taken from the $EDITOR env variable if it exists) with the original genesis file. Once you apply your changes, you can review the diff before applying the new genesis file, or revert the changes.
+
+Please note that if the chain has been started already (or any block has been created), this command won't work. The genesis is "sealed" once a new block has been created.
+
 ### Testnet
 
 Anyone in the world can join your network. They'll need to run:
@@ -88,4 +101,8 @@ binaries:
   daemon: myappd
 ```
 
-The `name` is simply the name of the project (taken from `chainkit create myapp`). The `image` is the docker image built by chainkit. You can specify your own image if you already have a build system building a docker image. The last field `binaries` contain the binaries of the CLI and the Daemon of a cosmos app. It must map to what's inside the docker image, both binary names have to exist after you run a `docker build` using the Dockerfile of the project.
+The `name` is simply the name of the project (taken from `chainkit create myapp`).
+
+The `image` is the docker image built by chainkit. You can specify your own image if you already have a build system building a docker image.
+
+The last field `binaries` contain the binaries of the CLI and the Daemon of a cosmos app. It must map to what's inside the docker image, both binary names have to exist after you run a `docker build` using the Dockerfile of the project.
