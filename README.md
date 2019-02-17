@@ -70,3 +70,22 @@ where `<network ID>` is found in the output from starting the first node, or, fo
 Under the hood, *chainkit* uses [IPFS](https://ipfs.io/) to transfer your network's manifest, genesis file and Docker image between nodes.
 
 A built-in discovery mechanism (using [libp2p](https://libp2p.io/) DHT) allows nodes to discover themselves in a completely decentralized fashion.
+
+### Moving an existing project to chainkit
+
+When chainkit creates a new project, it generates two files:
+- chainkit.yml
+- Dockerfile
+
+It's useful to understand what they contain in order to move an existing project to chainkit. If the project already contains a `Dockerfile`, you won't need to change it.
+
+Chainkit.yml:
+```yaml
+name: myapp
+image: chainkit-myapp
+binaries:
+  cli: myappcli
+  daemon: myappd
+```
+
+The `name` is simply the name of the project (taken from `chainkit create myapp`). The `image` is the docker image built by chainkit. You can specify your own image if you already have a build system building a docker image. The last field `binaries` contain the binaries of the CLI and the Daemon of a cosmos app. It must map to what's inside the docker image, both binary names have to exist after you run a `docker build` using the Dockerfile of the project.
