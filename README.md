@@ -22,8 +22,7 @@ Requirements:
 
 From this repository, run:
 ```bash
-$ make
-$ cp chainkit /usr/local/bin
+$ make install
 ```
 
 ## Usage
